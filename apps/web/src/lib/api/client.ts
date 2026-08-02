@@ -99,7 +99,10 @@ export function buildQuery(params: QueryParams = {}): string {
 }
 
 /** Full request returning both payload and envelope metadata. */
-export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<Result<T>> {
+export async function apiRequest<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<Result<T>> {
   const { method = 'GET', query, body, signal, headers = {}, revalidate, accessToken } = options;
 
   const url = `${resolveBaseUrl()}${path.startsWith('/') ? path : `/${path}`}${buildQuery(query)}`;
@@ -156,10 +159,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
 }
 
 /** Returns `null` on 404 instead of throwing, for optional resources. */
-export async function apiMaybe<T>(
-  path: string,
-  options: RequestOptions = {},
-): Promise<T | null> {
+export async function apiMaybe<T>(path: string, options: RequestOptions = {}): Promise<T | null> {
   try {
     return await api<T>(path, options);
   } catch (error) {

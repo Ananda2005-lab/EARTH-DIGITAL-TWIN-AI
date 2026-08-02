@@ -8,7 +8,10 @@ import { cn } from '@/lib/utils';
 export const Separator = React.forwardRef<
   React.ElementRef<typeof SeparatorPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root> & { glow?: boolean }
->(function Separator({ className, orientation = 'horizontal', decorative = true, glow, ...props }, ref) {
+>(function Separator(
+  { className, orientation = 'horizontal', decorative = true, glow, ...props },
+  ref,
+) {
   return (
     <SeparatorPrimitive.Root
       ref={ref}

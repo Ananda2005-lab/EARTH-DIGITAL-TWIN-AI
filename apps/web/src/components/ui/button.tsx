@@ -1,4 +1,4 @@
-import { Slot } from '@radix-ui/react-slot';
+import { Slot, Slottable } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { LoaderCircle } from 'lucide-react';
 import * as React from 'react';
@@ -19,7 +19,7 @@ const buttonVariants = cva(
       variant: {
         primary:
           'bg-primary text-primary-foreground shadow-glow hover:shadow-glow-lg hover:brightness-110',
-        secondary: 'bg-surface-muted text-foreground border-border border hover:bg-surface-strong',
+        secondary: 'bg-surface-muted text-foreground border-border hover:bg-surface-strong border',
         ghost: 'text-muted-foreground hover:text-foreground hover:bg-surface-muted',
         outline: 'border-border text-foreground hover:bg-surface-muted border bg-transparent',
         glass: 'glass-sm text-foreground hover:border-primary/30 hover:shadow-glow',
@@ -62,7 +62,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
       {...props}
     >
       {loading ? <LoaderCircle className="animate-spin" aria-hidden /> : null}
-      {children}
+      {/*
+        `Slottable` marks which child `Slot` should merge into. Without it, an
+        `asChild` button with a spinner sibling hands Slot two children and it
+        throws. It renders as a plain fragment when the element is a <button>.
+      */}
+      <Slottable>{children}</Slottable>
     </Component>
   );
 });

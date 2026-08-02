@@ -84,7 +84,12 @@ function CommandPalette({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg" hideClose className="top-[18%] translate-y-0 p-0" aria-label="Command palette">
+      <DialogContent
+        size="lg"
+        hideClose
+        className="top-[18%] translate-y-0 p-0"
+        aria-label="Command palette"
+      >
         <DialogTitle className="sr-only">Command palette</DialogTitle>
         <CommandPrimitive
           loop

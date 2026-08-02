@@ -26,7 +26,11 @@ export const AvatarImage = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
 >(function AvatarImage({ className, ...props }, ref) {
   return (
-    <AvatarPrimitive.Image ref={ref} className={cn('aspect-square size-full', className)} {...props} />
+    <AvatarPrimitive.Image
+      ref={ref}
+      className={cn('aspect-square size-full', className)}
+      {...props}
+    />
   );
 });
 

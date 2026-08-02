@@ -69,7 +69,7 @@ export function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
       <button
         type="button"
         onClick={palette.toggle}
-        className="glass-sm text-muted-foreground hover:text-foreground focus-visible:ring-ring hidden h-9 w-56 items-center gap-2 rounded-lg px-3 text-sm transition-colors outline-none focus-visible:ring-2 md:flex xl:w-72"
+        className="glass-sm text-muted-foreground hover:text-foreground focus-visible:ring-ring hidden h-9 w-56 items-center gap-2 rounded-lg px-3 text-sm outline-none transition-colors focus-visible:ring-2 md:flex xl:w-72"
       >
         <Search className="size-4 shrink-0" aria-hidden />
         <span className="flex-1 text-left">Search…</span>

@@ -14,9 +14,9 @@ export const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
 
 const itemClasses = cn(
   'relative flex cursor-pointer select-none items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none',
-  'transition-colors focus:bg-surface-muted focus:text-foreground',
+  'focus:bg-surface-muted focus:text-foreground transition-colors',
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-  '[&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground',
+  '[&_svg]:text-muted-foreground [&_svg]:size-4 [&_svg]:shrink-0',
 );
 
 export const DropdownMenuContent = React.forwardRef<
@@ -29,7 +29,7 @@ export const DropdownMenuContent = React.forwardRef<
         ref={ref}
         sideOffset={sideOffset}
         className={cn(
-          'glass z-modal min-w-52 overflow-hidden rounded-xl p-1.5 shadow-glass',
+          'glass z-modal shadow-glass min-w-52 overflow-hidden rounded-xl p-1.5',
           'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           className,
         )}
@@ -48,7 +48,8 @@ export const DropdownMenuItem = React.forwardRef<
       ref={ref}
       className={cn(
         itemClasses,
-        destructive && 'text-destructive focus:bg-destructive/12 focus:text-destructive [&_svg]:text-destructive',
+        destructive &&
+          'text-destructive focus:bg-destructive/12 focus:text-destructive [&_svg]:text-destructive',
         className,
       )}
       {...props}
@@ -121,7 +122,7 @@ export const DropdownMenuSubContent = React.forwardRef<
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.SubContent
         ref={ref}
-        className={cn('glass z-modal min-w-44 rounded-xl p-1.5 shadow-glass', className)}
+        className={cn('glass z-modal shadow-glass min-w-44 rounded-xl p-1.5', className)}
         {...props}
       />
     </DropdownMenuPrimitive.Portal>
@@ -154,10 +155,16 @@ export const DropdownMenuSeparator = React.forwardRef<
   );
 });
 
-export function DropdownMenuShortcut({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
+export function DropdownMenuShortcut({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
-      className={cn('text-muted-foreground ml-auto font-mono text-[10px] tracking-widest', className)}
+      className={cn(
+        'text-muted-foreground ml-auto font-mono text-[10px] tracking-widest',
+        className,
+      )}
       {...props}
     />
   );

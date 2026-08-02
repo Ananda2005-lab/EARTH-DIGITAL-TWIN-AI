@@ -21,7 +21,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(function Card(
       className={cn(
         'relative rounded-2xl',
         variant === 'glass' && 'glass glass-highlight',
-        variant === 'solid' && 'bg-surface border-border border shadow-glass-sm',
+        variant === 'solid' && 'bg-surface border-border shadow-glass-sm border',
         variant === 'outline' && 'border-border border bg-transparent',
         interactive && 'hover-lift cursor-pointer',
         className,
@@ -43,17 +43,18 @@ export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
   },
 );
 
-export const CardTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
-  function CardTitle({ className, ...props }, ref) {
-    return (
-      <h3
-        ref={ref}
-        className={cn('display-tight text-base leading-tight sm:text-lg', className)}
-        {...props}
-      />
-    );
-  },
-);
+export const CardTitle = React.forwardRef<
+  HTMLHeadingElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(function CardTitle({ className, ...props }, ref) {
+  return (
+    <h3
+      ref={ref}
+      className={cn('display-tight text-base leading-tight sm:text-lg', className)}
+      {...props}
+    />
+  );
+});
 
 export const CardDescription = React.forwardRef<
   HTMLParagraphElement,
@@ -73,7 +74,10 @@ export const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
     return (
       <div
         ref={ref}
-        className={cn('border-border/60 flex items-center gap-3 border-t px-5 py-4 sm:px-6', className)}
+        className={cn(
+          'border-border/60 flex items-center gap-3 border-t px-5 py-4 sm:px-6',
+          className,
+        )}
         {...props}
       />
     );

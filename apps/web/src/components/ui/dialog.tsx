@@ -52,7 +52,7 @@ export const DialogContent = React.forwardRef<
         ref={ref}
         className={cn(
           'glass glass-highlight z-modal fixed left-1/2 top-1/2 w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2',
-          'rounded-2xl shadow-elevated',
+          'shadow-elevated rounded-2xl',
           'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           sizeClasses[size],
           className,
@@ -83,7 +83,10 @@ export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLD
 export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('border-border/60 flex items-center justify-end gap-3 border-t px-6 py-4', className)}
+      className={cn(
+        'border-border/60 flex items-center justify-end gap-3 border-t px-6 py-4',
+        className,
+      )}
       {...props}
     />
   );
