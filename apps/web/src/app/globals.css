@@ -1,0 +1,409 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark is the primary, mission-control oriented theme. */
+    --background: 222 47% 5%;
+    --foreground: 210 40% 98%;
+
+    --surface: 222 40% 8%;
+    --surface-strong: 222 38% 11%;
+    --surface-muted: 222 32% 14%;
+
+    --card: 222 40% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 44% 7%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 190 92% 52%;
+    --primary-foreground: 200 100% 6%;
+    --primary-soft: 190 80% 18%;
+
+    --secondary: 258 90% 66%;
+    --secondary-foreground: 260 60% 8%;
+
+    --muted: 217 33% 15%;
+    --muted-foreground: 215 20% 68%;
+
+    --accent: 292 84% 61%;
+    --accent-foreground: 292 40% 8%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 69% 45%;
+    --success-foreground: 155 60% 6%;
+
+    --warning: 38 92% 55%;
+    --warning-foreground: 30 60% 8%;
+
+    --info: 205 90% 58%;
+    --info-foreground: 205 60% 8%;
+
+    --border: 215 28% 20%;
+    --input: 215 28% 20%;
+    --ring: 190 92% 52%;
+
+    --glass-highlight: 200 100% 90%;
+    --glass-tint: 222 47% 8%;
+    --glass-opacity: 0.62;
+
+    --radius: 0.875rem;
+
+    --chart-1: 190 92% 52%;
+    --chart-2: 258 90% 66%;
+    --chart-3: 292 84% 61%;
+    --chart-4: 38 92% 55%;
+    --chart-5: 152 69% 45%;
+    --chart-6: 12 88% 62%;
+  }
+
+  .light {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    --surface: 0 0% 100%;
+    --surface-strong: 210 40% 99%;
+    --surface-muted: 214 32% 95%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 199 89% 42%;
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 199 90% 92%;
+
+    --secondary: 258 78% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 214 32% 93%;
+    --muted-foreground: 215 22% 42%;
+
+    --accent: 292 72% 48%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 62% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 32 90% 44%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 205 82% 45%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 214 25% 86%;
+    --input: 214 25% 86%;
+    --ring: 199 89% 42%;
+
+    --glass-highlight: 0 0% 100%;
+    --glass-tint: 210 40% 100%;
+    --glass-opacity: 0.72;
+  }
+
+  /* High contrast accessibility mode, toggled from Settings. */
+  .contrast-boost {
+    --border: 210 40% 60%;
+    --muted-foreground: 210 40% 88%;
+    --glass-opacity: 0.9;
+  }
+
+  .light.contrast-boost {
+    --border: 222 47% 25%;
+    --muted-foreground: 222 47% 20%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      'cv02' 1,
+      'cv03' 1,
+      'cv04' 1,
+      'ss01' 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    @apply bg-primary/30 text-foreground;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Sleek scrollbars that match the glass aesthetic. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.55);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  .reduce-motion *,
+  .reduce-motion *::before,
+  .reduce-motion *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer components {
+  /* ── Glass surfaces ───────────────────────────────────────────────────── */
+  .glass {
+    background-color: hsl(var(--glass-tint) / var(--glass-opacity));
+    @apply border border-white/[0.06] shadow-glass backdrop-blur-2xl;
+  }
+
+  .light .glass {
+    @apply border-black/[0.06];
+  }
+
+  .glass-sm {
+    background-color: hsl(var(--glass-tint) / calc(var(--glass-opacity) - 0.08));
+    @apply border border-white/[0.05] shadow-glass-sm backdrop-blur-xl;
+  }
+
+  .light .glass-sm {
+    @apply border-black/[0.05];
+  }
+
+  .glass-panel {
+    @apply glass rounded-2xl;
+  }
+
+  /* Hairline top highlight, the detail that sells the glass. */
+  .glass-highlight {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .glass-highlight::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      to bottom,
+      hsl(var(--glass-highlight) / 0.22),
+      hsl(var(--glass-highlight) / 0.02) 40%,
+      transparent 70%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── Typography ───────────────────────────────────────────────────────── */
+  .text-gradient {
+    @apply bg-gradient-to-br from-white via-white to-white/55 bg-clip-text text-transparent;
+  }
+
+  .light .text-gradient {
+    @apply from-slate-900 via-slate-900 to-slate-900/60;
+  }
+
+  .text-gradient-brand {
+    background: linear-gradient(
+      100deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--secondary)) 45%,
+      hsl(var(--accent)) 100%
+    );
+    background-size: 200% auto;
+    @apply bg-clip-text text-transparent;
+  }
+
+  .display-tight {
+    @apply font-display font-semibold tracking-[-0.03em];
+  }
+
+  .numeric {
+    font-variant-numeric: tabular-nums;
+    @apply font-mono;
+  }
+
+  /* ── Decoration ───────────────────────────────────────────────────────── */
+  .aurora-bg {
+    @apply bg-aurora-gradient;
+  }
+
+  .grid-overlay {
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.35) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.35) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+  }
+
+  .noise-overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .divider-glow {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--primary) / 0.45) 50%,
+      transparent
+    );
+    height: 1px;
+  }
+
+  /* ── Interactions ─────────────────────────────────────────────────────── */
+  .hover-lift {
+    @apply transition-all duration-300 ease-premium hover:-translate-y-0.5 hover:shadow-elevated;
+  }
+
+  .press {
+    @apply active:scale-[0.985] active:transition-none;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-muted/60;
+  }
+
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent;
+  }
+
+  /* ── Data viz helpers ─────────────────────────────────────────────────── */
+  .stat-value {
+    @apply numeric text-2xl font-semibold tracking-tight tabular-nums;
+  }
+
+  .stat-label {
+    @apply text-2xs font-medium uppercase tracking-[0.14em] text-muted-foreground;
+  }
+
+  .live-dot {
+    @apply relative inline-flex h-2 w-2 rounded-full bg-success;
+  }
+
+  .live-dot::before {
+    content: '';
+    @apply absolute inset-0 animate-pulse-ring rounded-full bg-success/70;
+  }
+
+  /* ── Map / globe chrome ───────────────────────────────────────────────── */
+  .map-shell {
+    @apply relative isolate h-full w-full overflow-hidden bg-[#03060f];
+  }
+
+  .globe-vignette {
+    background: radial-gradient(
+      circle at 50% 45%,
+      transparent 40%,
+      hsl(222 47% 3% / 0.55) 78%,
+      hsl(222 47% 2% / 0.9) 100%
+    );
+  }
+
+  .maplibregl-ctrl-attrib,
+  .maplibregl-ctrl-bottom-right,
+  .maplibregl-ctrl-bottom-left {
+    font-size: 10px !important;
+  }
+
+  .maplibregl-ctrl-attrib.maplibregl-compact {
+    background: hsl(var(--glass-tint) / 0.7) !important;
+    color: hsl(var(--muted-foreground)) !important;
+    backdrop-filter: blur(12px);
+  }
+
+  .maplibregl-popup-content {
+    @apply glass rounded-xl px-3 py-2 text-sm text-foreground;
+    background-color: hsl(var(--glass-tint) / 0.9) !important;
+  }
+
+  .maplibregl-popup-tip {
+    display: none !important;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scroll-fade-y {
+    mask-image: linear-gradient(to bottom, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .content-auto {
+    content-visibility: auto;
+  }
+
+  .will-transform {
+    will-change: transform;
+  }
+}

@@ -1,0 +1,10 @@
+﻿INIT_EXIT=0
+warning: in the working copy of 'apps/api/.eslintrc.cjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/prisma/seed.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/src/app.module.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/src/common/decorators/api-paginated-response.decorator.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/src/common/filters/http-exception.filter.ts', LF will be replaced by CRLF the next time Git touches it
+ADD_EXIT=-1
+STAGED=191
+COMMIT_EXIT=0
+fatal: your current branch 'master' does not have any commits yet

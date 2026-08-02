@@ -1,0 +1,65 @@
+import { z } from 'zod';
+
+/**
+ * Server-side environment. Validated lazily so that a missing optional provider
+ * key degrades a single feature instead of crashing the whole app at boot.
+ */
+const serverSchema = z.object({
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  API_BASE_URL: z.string().url().default('http://localhost:4000/api/v1'),
+  AI_BASE_URL: z.string().url().default('http://localhost:8000'),
+  UPSTREAM_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60_000).default(12_000),
+
+  // Optional provider credentials — features self-disable when absent.
+  NASA_FIRMS_API_KEY: z.string().min(8).optional(),
+  OPENSKY_CLIENT_ID: z.string().min(3).optional(),
+  OPENSKY_CLIENT_SECRET: z.string().min(3).optional(),
+  AISSTREAM_API_KEY: z.string().min(8).optional(),
+  TOMTOM_API_KEY: z.string().min(8).optional(),
+  MAPTILER_API_KEY: z.string().min(8).optional(),
+  CESIUM_ION_TOKEN: z.string().min(8).optional(),
+});
+
+const clientSchema = z.object({
+  NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
+  NEXT_PUBLIC_API_URL: z.string().default('/api'),
+  NEXT_PUBLIC_ENABLE_ANALYTICS: z
+    .string()
+    .optional()
+    .transform((v) => v === 'true'),
+});
+
+export type ServerEnv = z.infer<typeof serverSchema>;
+export type ClientEnv = z.infer<typeof clientSchema>;
+
+let cachedServerEnv: ServerEnv | null = null;
+
+export function serverEnv(): ServerEnv {
+  if (cachedServerEnv) return cachedServerEnv;
+  const parsed = serverSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
+    throw new Error(`Invalid server environment: ${issues}`);
+  }
+  cachedServerEnv = parsed.data;
+  return cachedServerEnv;
+}
+
+export const clientEnv: ClientEnv = clientSchema.parse({
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_ENABLE_ANALYTICS: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS,
+});
+
+/** Which optional integrations are configured, exposed to the UI as capability hints. */
+export function providerCapabilities() {
+  const env = process.env;
+  return {
+    firms: Boolean(env.NASA_FIRMS_API_KEY),
+    opensky: Boolean(env.OPENSKY_CLIENT_ID && env.OPENSKY_CLIENT_SECRET),
+    ais: Boolean(env.AISSTREAM_API_KEY),
+    traffic: Boolean(env.TOMTOM_API_KEY),
+    maptiler: Boolean(env.MAPTILER_API_KEY),
+    cesium: Boolean(env.CESIUM_ION_TOKEN),
+  };
+}
