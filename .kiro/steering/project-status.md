@@ -3,82 +3,97 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-02_
+_Last verified: 2026-08-02 · roughly 52% complete_
 
 ## Shape of the repo
 
-npm workspaces monorepo, `@edt/*` scope.
+npm workspaces monorepo, `@edt/*` scope. Git initialised, branch `master`.
 
 | Workspace         | Package       | State                                                          |
 | ----------------- | ------------- | -------------------------------------------------------------- |
-| `packages/shared` | `@edt/shared` | Done — types, Zod schemas, constants, utils. Builds.           |
-| `apps/api`        | `@edt/api`    | Substantially complete (131 files). Builds, lints, typechecks. |
-| `apps/web`        | `@edt/web`    | Config + data providers only. No UI yet.                       |
+| `packages/shared` | `@edt/shared` | Done — types, Zod schemas, constants, utils.                   |
+| `apps/api`        | `@edt/api`    | ~95% — 21 controllers, 139 endpoints. Builds, lints, typechecks. |
+| `apps/web`        | `@edt/web`    | ~20% — foundation done, 4 of ~40 routes built.                  |
 | `scripts`         | —             | Two gazetteer index builders.                                  |
-| `infra/docker`    | —             | Local Postgres (PostGIS) + Redis compose file.                 |
-
-Git is initialized on `main`. `README.md` carries the quickstart;
-`apps/api/.env.example` and `apps/web/.env.example` document every environment
-variable.
+| `infra/docker`    | —             | Local Postgres/Redis compose stack.                            |
 
 ## Verified commands
 
-Run from the repo root unless noted.
+All of these pass as of the last check. Run from the repo root.
 
 ```
-npm run build:shared      # tsc, passes
-npm run build:api         # nest build, passes
-npm run lint  --workspace @edt/api    # 0 errors, 0 warnings
-npm run typecheck --workspace @edt/api # 0 errors, ~6s
-npm run test  --workspace @edt/api    # passes, but there are no tests yet
+npm run build:shared
+npm run build:api
+npm run build:web
+npm run lint      --workspace @edt/api    # 0 errors, 0 warnings
+npm run typecheck --workspace @edt/api
+npm run lint      --workspace @edt/web    # next lint, clean
+npm run typecheck --workspace @edt/web
 ```
 
-`npm run build:web` is expected to fail: `apps/web/src/app` has no `layout.tsx`
-or `page.tsx`.
+Nothing has been exercised against a live Postgres or Redis yet, and the dev
+server has not been run end-to-end.
 
 ## API — what exists
 
-22 Nest modules under `apps/api/src/modules`:
+22 Nest modules under `apps/api/src/modules`: admin, ai, analytics, auth,
+bookmarks, cities, countries, environment, flights, hazards, health, jobs,
+notifications, preferences, reports, search, ships, ships-relay, space, users,
+weather, workspaces.
 
-admin, ai, analytics, auth, bookmarks, cities, countries, environment, flights,
-hazards, health, jobs, notifications, preferences, reports, search, ships,
-ships-relay, space, users, weather, workspaces.
+Global wiring in `app.module.ts`: Zod validation pipe, response envelope + error
+filter, Redis response cache, audit interceptor, JWT / roles / permissions /
+maintenance guards, throttler, request-id middleware, pino logging, BullMQ,
+scheduler.
 
-Cross-cutting wiring is global in `app.module.ts`: Zod validation pipe, response
-envelope + error filter, Redis response cache, audit interceptor, JWT / roles /
-permissions / maintenance guards, throttler, request-id middleware, pino logging,
-BullMQ, scheduler.
+Prisma: 35 models, 30 enums, migration `0001_init`, seed script.
 
-Prisma schema: 35 models, 30 enums, one migration (`0001_init`), seed script.
+## Web — what exists
 
-## Not started / missing
+Foundation:
 
-Ordered roughly by what blocks the most.
+- Design tokens and glass utilities in `globals.css`, dark + light + contrast-boost
+- 14 UI primitives in `components/ui`
+- Shell: `AppShell`, `Sidebar` (collapsible rail, persisted), `Topbar`,
+  `CommandPalette` (⌘K), `ThemeToggle`
+- Page primitives: `PageContainer`, `PageHeader`, `Section`, `StatCard`,
+  `SeverityBadge`, `HazardKindIcon`
+- `lib/api/client.ts` — typed envelope unwrapping, `ApiError`, `describeError`
+- `app/api/[...path]/route.ts` — same-origin reverse proxy to the gateway
+- `server/providers/*` — six upstream integrations (countries, weather, hazards,
+  flights, maritime, space) with caching, so pages render without the gateway
 
-1. **Frontend.** Every page and component. `apps/web/src/app` holds only
-   `globals.css`; `src/lib` and `src/server/providers` are the only real code.
-2. **Tests.** Zero spec files in any workspace.
-3. **Deployment infra.** `infra/docker/docker-compose.yml` covers local Postgres
-   and Redis only. No application Dockerfiles, no Nginx config, no GitHub Actions
-   workflows.
+Routes built (4 of ~40): `/` landing, `/dashboard` Mission Control,
+`/countries`, `/hazards`. Plus `error.tsx`, `not-found.tsx`, `(app)/loading.tsx`.
+
+## Not started
+
+1. **36 remaining routes**, including the 12 admin sub-pages, `/login`,
+   `/register`, and detail routes `/countries/[code]`, `/cities/[id]`.
+2. **The 3D globe.** Nothing rendered yet; the 54-layer catalogue in
+   `@edt/shared` has no renderer behind it. Largest single remaining piece.
+3. **Tests.** Zero spec files anywhere.
+4. **CI.** No GitHub Actions workflows. No Nginx config or Dockerfiles for the
+   apps (only the local Postgres/Redis compose stack exists).
 
 ## Deviations from the original brief
 
-Deliberate or inherited; decide before building on top of them.
-
-- **No FastAPI service.** AI lives in the Nest `ai` module instead of a separate
-  Python app.
+- **No FastAPI service.** AI lives in the Nest `ai` module.
 - **MapLibre GL + react-three-fiber, not CesiumJS.** That is what `apps/web`
   declares as dependencies.
 
 ## Gotchas worth remembering
 
-- **Keep `zod` on a single version.** The root `package.json` has an
-  `overrides` entry for it. Two copies (one hoisted, one nested under
-  `packages/shared`) made every controller trip `TS2589` and drove `tsc` to
-  exhaust an 8 GB heap. If typechecking suddenly hangs or OOMs, check for a
-  duplicate `zod` install first.
-- **ESLint config is `.eslintrc.cjs`, not JSON,** because
-  `parserOptions.tsconfigRootDir` has to be an absolute path (`__dirname`).
-- Repo-wide Prettier drift: `npm run format:check` flags ~150 files that were
-  never formatted. Running `npm run format` fixes it but touches a lot at once.
+- **Keep `zod` on a single version.** Root `package.json` has an `overrides`
+  entry pinning it. Two copies (one hoisted, one nested under `packages/shared`)
+  made every controller trip `TS2589` and drove `tsc` past an 8 GB heap. If
+  typechecking hangs or OOMs, check for a duplicate `zod` install first.
+- **API ESLint config is `.eslintrc.cjs`, not JSON,** because
+  `parserOptions.tsconfigRootDir` must be an absolute path (`__dirname`).
+- **`Button` uses `Slottable`.** Without it, `asChild` plus the loading spinner
+  hands Radix `Slot` two children and every page using `<Button asChild>` fails
+  to prerender. Same care is needed in any primitive that renders siblings
+  alongside `children`.
+- Pages that read live upstream feeds must set `export const dynamic =
+  'force-dynamic'`, or `next build` will try to prerender them and hit the
+  network.
