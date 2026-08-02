@@ -50,7 +50,9 @@ export class ApiKeysService {
         keyHash: sha256(secret),
         scopes: input.scopes,
         rateLimitPerMinute: input.rateLimitPerMinute,
-        expiresAt: input.expiresInDays ? new Date(Date.now() + input.expiresInDays * 86_400_000) : null,
+        expiresAt: input.expiresInDays
+          ? new Date(Date.now() + input.expiresInDays * 86_400_000)
+          : null,
       },
     });
     return { record: toApiKeyRecord(row), secret };
@@ -86,7 +88,10 @@ export class ApiKeysService {
     const existing = await this.prisma.apiKey.findUnique({ where: { id } });
     if (!existing) throw AppException.notFound('API key not found');
     if (existing.revokedAt) return toApiKeyRecord(existing);
-    const revoked = await this.prisma.apiKey.update({ where: { id }, data: { revokedAt: new Date() } });
+    const revoked = await this.prisma.apiKey.update({
+      where: { id },
+      data: { revokedAt: new Date() },
+    });
     return toApiKeyRecord(revoked);
   }
 }

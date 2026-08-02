@@ -1,7 +1,31 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { z } from 'zod';
-import { idSchema, listNotificationsSchema, type NotificationItem, type PaginatedResult } from '@edt/shared';
+import {
+  idSchema,
+  listNotificationsSchema,
+  type NotificationItem,
+  type PaginatedResult,
+} from '@edt/shared';
 import { ApiPaginatedResponse } from 'src/common/decorators/api-paginated-response.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { AppException } from 'src/common/errors/app-exception';
@@ -18,7 +42,10 @@ const updatePreferencesSchema = z.object({
   digest: z.enum(['off', 'daily', 'weekly']).optional(),
   quietHoursStart: z.number().int().min(0).max(23).nullish(),
   quietHoursEnd: z.number().int().min(0).max(23).nullish(),
-  mutedKinds: z.array(z.enum(['hazard', 'report', 'system', 'ai', 'billing', 'security'])).max(6).optional(),
+  mutedKinds: z
+    .array(z.enum(['hazard', 'report', 'system', 'ai', 'billing', 'security']))
+    .max(6)
+    .optional(),
 });
 
 export class ListNotificationsDto extends zodDto(listNotificationsSchema) {}

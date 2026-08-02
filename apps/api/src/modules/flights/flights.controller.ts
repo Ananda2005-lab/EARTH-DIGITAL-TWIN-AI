@@ -1,7 +1,13 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
-import { bboxStringSchema, flightQuerySchema, type BBox, type FlightFeed, type FlightState } from '@edt/shared';
+import {
+  bboxStringSchema,
+  flightQuerySchema,
+  type BBox,
+  type FlightFeed,
+  type FlightState,
+} from '@edt/shared';
 import { Attribution } from 'src/common/decorators/attribution.decorator';
 import { CacheTtl } from 'src/common/decorators/cache-ttl.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -40,7 +46,8 @@ export class FlightsController {
   @CacheTtl(20)
   @ApiOperation({
     summary: 'Live flight positions',
-    description: 'ADS-B state vectors, optionally constrained to a bbox. Cached for 20 s to respect OpenSky quotas.',
+    description:
+      'ADS-B state vectors, optionally constrained to a bbox. Cached for 20 s to respect OpenSky quotas.',
   })
   @ApiOkResponse({ description: 'Flight feed' })
   @ApiResponse({ status: 422, description: 'Invalid filter' })
@@ -59,8 +66,19 @@ export class FlightsController {
   @Attribution('OurAirports')
   @ApiOperation({ summary: 'Airports from the gazetteer' })
   @ApiOkResponse({ description: 'Airports ranked by throughput' })
-  async airports(@Query() query: AirportQueryDto): Promise<
-    { icao: string; iata: string | null; name: string; city: string | null; countryCode: string; lng: number; lat: number; passengers: number | null }[]
+  async airports(
+    @Query() query: AirportQueryDto,
+  ): Promise<
+    {
+      icao: string;
+      iata: string | null;
+      name: string;
+      city: string | null;
+      countryCode: string;
+      lng: number;
+      lat: number;
+      passengers: number | null;
+    }[]
   > {
     return this.flights.airports({
       countryCode: query.countryCode,

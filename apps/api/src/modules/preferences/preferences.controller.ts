@@ -1,5 +1,12 @@
 import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { preferencesSchema, type UserPreferences } from '@edt/shared';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/common/types/authenticated-user';
@@ -15,7 +22,10 @@ export class PreferencesController {
   constructor(private readonly preferences: PreferencesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get your preferences', description: 'Missing fields fall back to platform defaults.' })
+  @ApiOperation({
+    summary: 'Get your preferences',
+    description: 'Missing fields fall back to platform defaults.',
+  })
   @ApiOkResponse({ description: 'Effective preferences' })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
   async get(@CurrentUser() user: AuthenticatedUser): Promise<UserPreferences> {
@@ -23,7 +33,10 @@ export class PreferencesController {
   }
 
   @Patch()
-  @ApiOperation({ summary: 'Update preferences', description: 'Partial update; layer ids are validated against the registry.' })
+  @ApiOperation({
+    summary: 'Update preferences',
+    description: 'Partial update; layer ids are validated against the registry.',
+  })
   @ApiBody({ schema: UpdatePreferencesDto.openApiSchema })
   @ApiOkResponse({ description: 'Updated preferences' })
   @ApiResponse({ status: 422, description: 'Unknown layer id or invalid value' })

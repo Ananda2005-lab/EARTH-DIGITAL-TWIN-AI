@@ -13,7 +13,12 @@ export const passwordSchema = z
   .refine((v) => /[0-9]/.test(v), 'Add a number')
   .refine((v) => /[^A-Za-z0-9]/.test(v), 'Add a symbol');
 
-export const emailSchema = z.string().trim().toLowerCase().email('Enter a valid email address').max(254);
+export const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email('Enter a valid email address')
+  .max(254);
 
 export const registerSchema = z.object({
   email: emailSchema,
@@ -98,14 +103,21 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type PreferencesInput = z.infer<typeof preferencesSchema>;
 
 /** Rough entropy estimate (bits) for the password strength meter. */
-export function passwordStrength(password: string): { score: 0 | 1 | 2 | 3 | 4; label: string; bits: number } {
+export function passwordStrength(password: string): {
+  score: 0 | 1 | 2 | 3 | 4;
+  label: string;
+  bits: number;
+} {
   let pool = 0;
   if (/[a-z]/.test(password)) pool += 26;
   if (/[A-Z]/.test(password)) pool += 26;
   if (/[0-9]/.test(password)) pool += 10;
   if (/[^A-Za-z0-9]/.test(password)) pool += 33;
   const unique = new Set(password).size;
-  const bits = password.length > 0 ? Math.round(Math.log2(Math.max(pool, 1)) * Math.min(password.length, unique + 4)) : 0;
+  const bits =
+    password.length > 0
+      ? Math.round(Math.log2(Math.max(pool, 1)) * Math.min(password.length, unique + 4))
+      : 0;
   const score = bits >= 96 ? 4 : bits >= 72 ? 3 : bits >= 52 ? 2 : bits >= 32 ? 1 : 0;
   const labels = ['Very weak', 'Weak', 'Fair', 'Strong', 'Excellent'];
   return { score, label: labels[score]!, bits };

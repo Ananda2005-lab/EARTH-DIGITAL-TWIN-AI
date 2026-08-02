@@ -28,12 +28,14 @@ function earthquakeSeverity(magnitude: number): HazardSeverity {
   return 'info';
 }
 
-export async function getEarthquakes(options: {
-  hours?: number;
-  minMagnitude?: number;
-  bbox?: BBox;
-  limit?: number;
-} = {}): Promise<HazardEvent[]> {
+export async function getEarthquakes(
+  options: {
+    hours?: number;
+    minMagnitude?: number;
+    bbox?: BBox;
+    limit?: number;
+  } = {},
+): Promise<HazardEvent[]> {
   const { hours = 24, minMagnitude = 1.5, bbox, limit = 1000 } = options;
   const key = cacheKey('usgs:quakes', { hours, minMagnitude, limit });
   const events = await cached(key, 300, async () => {
@@ -84,7 +86,13 @@ interface EonetEvent {
   link: string;
   closed: string | null;
   categories: { id: string; title: string }[];
-  geometry: { date: string; type: string; coordinates: number[] | number[][] | number[][][]; magnitudeValue?: number; magnitudeUnit?: string }[];
+  geometry: {
+    date: string;
+    type: string;
+    coordinates: number[] | number[][] | number[][][];
+    magnitudeValue?: number;
+    magnitudeUnit?: string;
+  }[];
 }
 
 const EONET_CATEGORY_MAP: Record<string, HazardKind> = {
@@ -97,7 +105,9 @@ const EONET_CATEGORY_MAP: Record<string, HazardKind> = {
   seaLakeIce: 'flood',
 };
 
-export async function getEonetEvents(options: { days?: number; limit?: number } = {}): Promise<HazardEvent[]> {
+export async function getEonetEvents(
+  options: { days?: number; limit?: number } = {},
+): Promise<HazardEvent[]> {
   const { days = 30, limit = 500 } = options;
   const key = cacheKey('eonet:events', { days, limit });
   return cached(key, 1800, async () => {
@@ -140,7 +150,11 @@ export async function getEonetEvents(options: { days?: number; limit?: number } 
 }
 
 function firstPoint(coordinates: unknown): { lng: number; lat: number } | null {
-  if (Array.isArray(coordinates) && typeof coordinates[0] === 'number' && typeof coordinates[1] === 'number') {
+  if (
+    Array.isArray(coordinates) &&
+    typeof coordinates[0] === 'number' &&
+    typeof coordinates[1] === 'number'
+  ) {
     return { lng: coordinates[0], lat: coordinates[1] };
   }
   if (Array.isArray(coordinates) && coordinates.length > 0) {
@@ -170,7 +184,9 @@ function normaliseIntensity(kind: HazardKind, magnitude?: number): number {
 
 // ── NASA FIRMS active fire detections ────────────────────────────────────────
 
-export async function getWildfires(options: { bbox?: BBox; days?: 1 | 2 | 3; limit?: number } = {}): Promise<HazardEvent[]> {
+export async function getWildfires(
+  options: { bbox?: BBox; days?: 1 | 2 | 3; limit?: number } = {},
+): Promise<HazardEvent[]> {
   const apiKey = process.env.NASA_FIRMS_API_KEY;
   if (!apiKey) return [];
   const { bbox = [-180, -90, 180, 90] as BBox, days = 1, limit = 2000 } = options;
@@ -189,7 +205,7 @@ export async function getWildfires(options: { bbox?: BBox; days?: 1 | 2 | 3; lim
         return {
           id: `fire:${row.latitude}:${row.longitude}:${row.acq_date}:${row.acq_time}:${index}`,
           kind: 'wildfire' as HazardKind,
-          title: `Active fire · ${Number.isFinite(frp) ? `${frp.toFixed(0)} MW` : row.confidence ?? 'detected'}`,
+          title: `Active fire · ${Number.isFinite(frp) ? `${frp.toFixed(0)} MW` : (row.confidence ?? 'detected')}`,
           severity: frp >= 200 ? 'extreme' : frp >= 80 ? 'high' : frp >= 20 ? 'moderate' : 'low',
           intensity: Math.min(1, (Number.isFinite(frp) ? frp : 10) / 300),
           location: { lng, lat },
@@ -308,7 +324,8 @@ export async function getHazardFeed(options: HazardFetchOptions = {}): Promise<H
   const wants = (kind: HazardKind) => !kinds || kinds.length === 0 || kinds.includes(kind);
 
   const tasks: Promise<HazardEvent[]>[] = [];
-  if (wants('earthquake')) tasks.push(getEarthquakes({ hours, minMagnitude, bbox }).catch(() => []));
+  if (wants('earthquake'))
+    tasks.push(getEarthquakes({ hours, minMagnitude, bbox }).catch(() => []));
   if (wants('wildfire')) tasks.push(getWildfires({ bbox }).catch(() => []));
   if (
     wants('volcano') ||
@@ -328,7 +345,10 @@ export async function getHazardFeed(options: HazardFetchOptions = {}): Promise<H
     .filter((event) => {
       if (!wants(event.kind)) return false;
       if (bbox && !bboxContains(bbox, event.location)) return false;
-      if (minSeverity && HAZARD_SEVERITY_ORDER.indexOf(event.severity) < HAZARD_SEVERITY_ORDER.indexOf(minSeverity)) {
+      if (
+        minSeverity &&
+        HAZARD_SEVERITY_ORDER.indexOf(event.severity) < HAZARD_SEVERITY_ORDER.indexOf(minSeverity)
+      ) {
         return false;
       }
       // De-duplicate the same physical event reported by multiple providers.
@@ -350,7 +370,10 @@ export async function getHazardFeed(options: HazardFetchOptions = {}): Promise<H
   return {
     events,
     total,
-    window: { from: new Date(Date.now() - hours * 3_600_000).toISOString(), to: new Date().toISOString() },
+    window: {
+      from: new Date(Date.now() - hours * 3_600_000).toISOString(),
+      to: new Date().toISOString(),
+    },
     attribution: 'USGS · NASA EONET · NASA FIRMS · GDACS',
     fetchedAt: new Date().toISOString(),
   };

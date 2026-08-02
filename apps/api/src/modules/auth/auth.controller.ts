@@ -91,7 +91,10 @@ export class AuthController {
   @Public()
   @Throttle(CREDENTIAL_THROTTLE)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Sign in with email and password', description: 'Requires `mfaCode` when MFA is enabled.' })
+  @ApiOperation({
+    summary: 'Sign in with email and password',
+    description: 'Requires `mfaCode` when MFA is enabled.',
+  })
   @ApiBody({ schema: LoginDto.openApiSchema })
   @ApiOkResponse({ description: 'Session issued' })
   @ApiResponse({ status: 401, description: 'Bad credentials or missing/invalid MFA code' })
@@ -133,7 +136,10 @@ export class AuthController {
   @Post('logout')
   @Public()
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Sign out', description: 'Revokes the presented refresh token family and clears the cookie.' })
+  @ApiOperation({
+    summary: 'Sign out',
+    description: 'Revokes the presented refresh token family and clears the cookie.',
+  })
   @ApiResponse({ status: 204, description: 'Signed out' })
   async logout(
     @Body() dto: RefreshDto,
@@ -147,7 +153,10 @@ export class AuthController {
 
   @Get('me')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Current principal', description: 'Resolved from the bearer token on every request.' })
+  @ApiOperation({
+    summary: 'Current principal',
+    description: 'Resolved from the bearer token on every request.',
+  })
   @ApiOkResponse({ description: 'The authenticated principal' })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
   me(@CurrentUser() user: AuthenticatedUser): AuthenticatedUser {
@@ -172,7 +181,8 @@ export class AuthController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
     summary: 'Resend the verification email',
-    description: 'Always succeeds, so the endpoint cannot be used to discover registered addresses.',
+    description:
+      'Always succeeds, so the endpoint cannot be used to discover registered addresses.',
   })
   @ApiBody({ schema: ResendVerificationDto.openApiSchema })
   @ApiResponse({ status: 202, description: 'Accepted' })
@@ -185,10 +195,16 @@ export class AuthController {
   @Public()
   @Throttle(RECOVERY_THROTTLE)
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiOperation({ summary: 'Request a password reset link', description: 'Always reports success.' })
+  @ApiOperation({
+    summary: 'Request a password reset link',
+    description: 'Always reports success.',
+  })
   @ApiBody({ schema: ForgotPasswordDto.openApiSchema })
   @ApiResponse({ status: 202, description: 'Accepted' })
-  async forgotPassword(@Body() dto: ForgotPasswordDto, @Req() request: Request): Promise<{ accepted: true }> {
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+    @Req() request: Request,
+  ): Promise<{ accepted: true }> {
     await this.auth.forgotPassword(dto.email, this.contextOf(request));
     return { accepted: true };
   }
@@ -197,11 +213,17 @@ export class AuthController {
   @Public()
   @Throttle(RECOVERY_THROTTLE)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Set a new password with a reset token', description: 'Revokes every existing session.' })
+  @ApiOperation({
+    summary: 'Set a new password with a reset token',
+    description: 'Revokes every existing session.',
+  })
   @ApiBody({ schema: ResetPasswordDto.openApiSchema })
   @ApiOkResponse({ description: 'Password updated' })
   @ApiResponse({ status: 400, description: 'Token invalid or expired' })
-  async resetPassword(@Body() dto: ResetPasswordDto, @Req() request: Request): Promise<{ updated: true }> {
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+    @Req() request: Request,
+  ): Promise<{ updated: true }> {
     await this.auth.resetPassword(dto.token, dto.password, this.contextOf(request));
     return { updated: true };
   }
@@ -210,7 +232,11 @@ export class AuthController {
   @ApiBearerAuth()
   @Throttle(RECOVERY_THROTTLE)
   @HttpCode(HttpStatus.OK)
-  @Audit({ action: 'auth.password_change', resource: 'user', redact: ['currentPassword', 'password', 'confirmPassword'] })
+  @Audit({
+    action: 'auth.password_change',
+    resource: 'user',
+    redact: ['currentPassword', 'password', 'confirmPassword'],
+  })
   @ApiOperation({ summary: 'Change your password', description: 'Signs out every other session.' })
   @ApiBody({ schema: ChangePasswordDto.openApiSchema })
   @ApiOkResponse({ description: 'Password updated' })
@@ -220,13 +246,22 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
     @Req() request: Request,
   ): Promise<{ updated: true }> {
-    await this.auth.changePassword(user.id, dto.currentPassword, dto.password, user.sessionId, this.contextOf(request));
+    await this.auth.changePassword(
+      user.id,
+      dto.currentPassword,
+      dto.password,
+      user.sessionId,
+      this.contextOf(request),
+    );
     return { updated: true };
   }
 
   @Get('sessions')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List active sessions', description: 'Devices currently holding a valid refresh token.' })
+  @ApiOperation({
+    summary: 'List active sessions',
+    description: 'Devices currently holding a valid refresh token.',
+  })
   @ApiOkResponse({ description: 'Active sessions' })
   async sessions(@CurrentUser() user: AuthenticatedUser): Promise<SessionSummary[]> {
     return this.auth.listSessions(user.id, user.sessionId);
@@ -249,7 +284,10 @@ export class AuthController {
 
   @Delete('sessions')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Revoke every other session', description: 'Keeps the caller signed in.' })
+  @ApiOperation({
+    summary: 'Revoke every other session',
+    description: 'Keeps the caller signed in.',
+  })
   @ApiOkResponse({ description: 'Number of revoked token families' })
   async revokeOtherSessions(@CurrentUser() user: AuthenticatedUser): Promise<{ revoked: number }> {
     return { revoked: await this.auth.revokeOtherSessions(user.id, user.sessionId) };
@@ -261,7 +299,8 @@ export class AuthController {
   @Audit({ action: 'auth.mfa_enrol', resource: 'user' })
   @ApiOperation({
     summary: 'Begin TOTP enrolment',
-    description: 'Returns the secret, otpauth URI and one-time recovery codes. Confirm with POST /auth/mfa/verify.',
+    description:
+      'Returns the secret, otpauth URI and one-time recovery codes. Confirm with POST /auth/mfa/verify.',
   })
   @ApiOkResponse({ description: 'Enrolment material' })
   @ApiResponse({ status: 409, description: 'MFA already enabled' })
@@ -277,7 +316,10 @@ export class AuthController {
   @ApiBody({ schema: MfaCodeDto.openApiSchema })
   @ApiOkResponse({ description: 'MFA enabled' })
   @ApiResponse({ status: 401, description: 'Invalid code' })
-  async verifyMfa(@CurrentUser() user: AuthenticatedUser, @Body() dto: MfaCodeDto): Promise<{ enabled: true }> {
+  async verifyMfa(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: MfaCodeDto,
+  ): Promise<{ enabled: true }> {
     await this.mfa.confirmEnrolment(user.id, dto.code);
     return { enabled: true };
   }
@@ -286,11 +328,17 @@ export class AuthController {
   @ApiBearerAuth()
   @Throttle(CREDENTIAL_THROTTLE)
   @Audit({ action: 'auth.mfa_disable', resource: 'user', redact: ['code'] })
-  @ApiOperation({ summary: 'Disable MFA', description: 'Requires a current TOTP or recovery code.' })
+  @ApiOperation({
+    summary: 'Disable MFA',
+    description: 'Requires a current TOTP or recovery code.',
+  })
   @ApiBody({ schema: MfaCodeDto.openApiSchema })
   @ApiOkResponse({ description: 'MFA disabled' })
   @ApiResponse({ status: 401, description: 'Invalid code' })
-  async disableMfa(@CurrentUser() user: AuthenticatedUser, @Body() dto: MfaCodeDto): Promise<{ enabled: false }> {
+  async disableMfa(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: MfaCodeDto,
+  ): Promise<{ enabled: false }> {
     await this.mfa.disable(user.id, dto.code);
     return { enabled: false };
   }
@@ -299,7 +347,10 @@ export class AuthController {
   @Public()
   @RawResponse()
   @UseGuards(AuthGuard('google'))
-  @ApiOperation({ summary: 'Start Google OAuth', description: 'Redirects to Google. Browser-only endpoint.' })
+  @ApiOperation({
+    summary: 'Start Google OAuth',
+    description: 'Redirects to Google. Browser-only endpoint.',
+  })
   @ApiResponse({ status: 302, description: 'Redirect to Google' })
   googleStart(): void {
     // Passport issues the redirect.
@@ -318,7 +369,10 @@ export class AuthController {
   @Public()
   @RawResponse()
   @UseGuards(AuthGuard('github'))
-  @ApiOperation({ summary: 'Start GitHub OAuth', description: 'Redirects to GitHub. Browser-only endpoint.' })
+  @ApiOperation({
+    summary: 'Start GitHub OAuth',
+    description: 'Redirects to GitHub. Browser-only endpoint.',
+  })
   @ApiResponse({ status: 302, description: 'Redirect to GitHub' })
   githubStart(): void {
     // Passport issues the redirect.

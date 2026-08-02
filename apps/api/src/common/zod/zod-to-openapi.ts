@@ -62,7 +62,9 @@ export function zodToOpenApi(schema: z.ZodTypeAny, depth = 0): SchemaObject {
   }
 
   if (schema instanceof z.ZodTuple) {
-    const items = (schema._def.items as z.ZodTypeAny[]).map((item) => zodToOpenApi(item, depth + 1));
+    const items = (schema._def.items as z.ZodTypeAny[]).map((item) =>
+      zodToOpenApi(item, depth + 1),
+    );
     return {
       type: 'array',
       items: items[0] ?? {},
@@ -96,17 +98,21 @@ export function zodToOpenApi(schema: z.ZodTypeAny, depth = 0): SchemaObject {
 
   if (schema instanceof z.ZodBoolean) return { type: 'boolean' };
   if (schema instanceof z.ZodDate) return { type: 'string', format: 'date-time' };
-  if (schema instanceof z.ZodEnum) return { type: 'string', enum: [...(schema.options as string[])] };
+  if (schema instanceof z.ZodEnum)
+    return { type: 'string', enum: [...(schema.options as string[])] };
   if (schema instanceof z.ZodNativeEnum) {
     return { type: 'string', enum: Object.values(schema.enum as Record<string, string>) };
   }
   if (schema instanceof z.ZodLiteral) {
     const value = schema.value as unknown;
-    const type = typeof value === 'number' ? 'number' : typeof value === 'boolean' ? 'boolean' : 'string';
+    const type =
+      typeof value === 'number' ? 'number' : typeof value === 'boolean' ? 'boolean' : 'string';
     return { type, enum: [value] };
   }
   if (schema instanceof z.ZodUnion) {
-    return { oneOf: (schema.options as z.ZodTypeAny[]).map((option) => zodToOpenApi(option, depth + 1)) };
+    return {
+      oneOf: (schema.options as z.ZodTypeAny[]).map((option) => zodToOpenApi(option, depth + 1)),
+    };
   }
   if (schema instanceof z.ZodDiscriminatedUnion) {
     const options = [...(schema.options as z.ZodTypeAny[])];

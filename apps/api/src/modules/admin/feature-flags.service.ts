@@ -52,14 +52,21 @@ export class FeatureFlagsService {
   }
 
   async remove(key: string): Promise<void> {
-    const existing = await this.prisma.featureFlag.findUnique({ where: { key }, select: { id: true } });
+    const existing = await this.prisma.featureFlag.findUnique({
+      where: { key },
+      select: { id: true },
+    });
     if (!existing) throw AppException.notFound('Feature flag not found');
     await this.prisma.featureFlag.delete({ where: { key } });
     await this.redis.del(CACHE_KEY);
   }
 
   /** Effective flag set for one principal, with rollout and audience applied. */
-  async evaluate(userId: string | null, plan: SubscriptionPlan | null, isInternal: boolean): Promise<Record<string, boolean>> {
+  async evaluate(
+    userId: string | null,
+    plan: SubscriptionPlan | null,
+    isInternal: boolean,
+  ): Promise<Record<string, boolean>> {
     const flags = await this.list();
     const result: Record<string, boolean> = {};
     for (const flag of flags) {
@@ -88,7 +95,7 @@ export function evaluateFlag(
   if (!userId) return false;
 
   const digest = createHash('sha1').update(`${flag.key}:${userId}`).digest();
-  const bucket = ((digest[0] ?? 0) << 8 | (digest[1] ?? 0)) % 100;
+  const bucket = (((digest[0] ?? 0) << 8) | (digest[1] ?? 0)) % 100;
   return bucket < flag.rollout;
 }
 

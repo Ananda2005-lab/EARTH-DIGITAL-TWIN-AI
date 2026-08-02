@@ -92,7 +92,11 @@ export class SystemService {
     const stored = await this.redis.get<MaintenanceState>(MAINTENANCE_KEY);
     if (stored) return stored.value;
     const fromConfig = this.config.get('maintenanceMode', { infer: true });
-    return { enabled: fromConfig, message: fromConfig ? 'Scheduled maintenance in progress' : null, since: null };
+    return {
+      enabled: fromConfig,
+      message: fromConfig ? 'Scheduled maintenance in progress' : null,
+      since: null,
+    };
   }
 
   async setMaintenance(enabled: boolean, message: string | null): Promise<MaintenanceState> {
@@ -111,7 +115,10 @@ export class SystemService {
   }
 
   /** Invalidate cached payloads by pattern, or a whole provider namespace. */
-  async invalidateCache(options: { pattern?: string; provider?: ProviderKey }): Promise<{ removed: number }> {
+  async invalidateCache(options: {
+    pattern?: string;
+    provider?: ProviderKey;
+  }): Promise<{ removed: number }> {
     if (options.provider) {
       return { removed: await this.upstream.invalidate(options.provider) };
     }
@@ -127,12 +134,21 @@ export class SystemService {
   private async timed(
     name: string,
     probe: () => Promise<number>,
-  ): Promise<{ name: string; status: 'ok' | 'degraded' | 'down'; latencyMs?: number; detail?: string }> {
+  ): Promise<{
+    name: string;
+    status: 'ok' | 'degraded' | 'down';
+    latencyMs?: number;
+    detail?: string;
+  }> {
     try {
       const latencyMs = await probe();
       return { name, status: latencyMs > 750 ? 'degraded' : 'ok', latencyMs };
     } catch (error) {
-      return { name, status: 'down', detail: error instanceof Error ? error.message : 'probe failed' };
+      return {
+        name,
+        status: 'down',
+        detail: error instanceof Error ? error.message : 'probe failed',
+      };
     }
   }
 }

@@ -117,15 +117,22 @@ export class TokenService {
     const record = await this.prisma.refreshToken.findUnique({
       where: { tokenHash },
       include: {
-        user: { select: { id: true, email: true, role: true, plan: true, status: true, deletedAt: true } },
+        user: {
+          select: { id: true, email: true, role: true, plan: true, status: true, deletedAt: true },
+        },
       },
     });
 
     if (!record) throw AppException.unauthorised('Refresh token is not recognised');
 
     if (record.usedAt || record.revokedAt) {
-      await this.revokeFamily(record.familyId, record.usedAt ? 'reuse_detected' : 'revoked_token_replayed');
-      this.logger.warn(`Refresh token reuse detected for family ${record.familyId}; family revoked`);
+      await this.revokeFamily(
+        record.familyId,
+        record.usedAt ? 'reuse_detected' : 'revoked_token_replayed',
+      );
+      this.logger.warn(
+        `Refresh token reuse detected for family ${record.familyId}; family revoked`,
+      );
       throw AppException.unauthorised('Refresh token has already been used; sign in again');
     }
 
@@ -181,7 +188,9 @@ export class TokenService {
 
   /** Sign out: consume the presented token and close its session. */
   async revokeByToken(presentedToken: string, reason = 'logout'): Promise<void> {
-    const record = await this.prisma.refreshToken.findUnique({ where: { tokenHash: sha256(presentedToken) } });
+    const record = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash: sha256(presentedToken) },
+    });
     if (!record) return;
     await this.revokeFamily(record.familyId, reason);
   }
@@ -201,16 +210,27 @@ export class TokenService {
     return tokens.count;
   }
 
-  async revokeSession(userId: string, sessionId: string, reason = 'revoked_by_user'): Promise<void> {
+  async revokeSession(
+    userId: string,
+    sessionId: string,
+    reason = 'revoked_by_user',
+  ): Promise<void> {
     const session = await this.prisma.session.findFirst({ where: { id: sessionId, userId } });
     if (!session) throw AppException.notFound('Session not found');
     await this.revokeFamily(session.familyId, reason);
   }
 
   /** Revoke everything, optionally keeping the caller's current session alive. */
-  async revokeAllForUser(userId: string, options: { exceptSessionId?: string | null; reason?: string } = {}): Promise<number> {
+  async revokeAllForUser(
+    userId: string,
+    options: { exceptSessionId?: string | null; reason?: string } = {},
+  ): Promise<number> {
     const sessions = await this.prisma.session.findMany({
-      where: { userId, revokedAt: null, ...(options.exceptSessionId ? { id: { not: options.exceptSessionId } } : {}) },
+      where: {
+        userId,
+        revokedAt: null,
+        ...(options.exceptSessionId ? { id: { not: options.exceptSessionId } } : {}),
+      },
       select: { familyId: true },
     });
     let revoked = 0;
@@ -324,6 +344,10 @@ export function parseUserAgent(userAgent: string | null): AgentInfo {
           : ua.includes('linux')
             ? 'Linux'
             : null;
-  const device = ua.includes('mobile') ? 'Mobile' : ua.includes('tablet') || ua.includes('ipad') ? 'Tablet' : 'Desktop';
+  const device = ua.includes('mobile')
+    ? 'Mobile'
+    : ua.includes('tablet') || ua.includes('ipad')
+      ? 'Tablet'
+      : 'Desktop';
   return { device, browser, os };
 }

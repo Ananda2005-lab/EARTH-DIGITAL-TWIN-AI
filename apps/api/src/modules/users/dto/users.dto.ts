@@ -11,7 +11,9 @@ export const recordHistorySchema = z.object({
   kind: z.enum(['search', 'place', 'report', 'ai', 'layer']),
   label: z.string().trim().min(1).max(400),
   detail: z.string().trim().max(2000).nullish(),
-  center: z.object({ lng: z.number().min(-180).max(180), lat: z.number().min(-90).max(90) }).nullish(),
+  center: z
+    .object({ lng: z.number().min(-180).max(180), lat: z.number().min(-90).max(90) })
+    .nullish(),
   metadata: z.record(z.unknown()).default({}),
 });
 

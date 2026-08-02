@@ -62,7 +62,13 @@ export interface AppConfig {
       aisStream?: string;
     };
   };
-  ai: { serviceUrl: string; token?: string; model: string; timeoutMs: number; dailyTokenBudget: number };
+  ai: {
+    serviceUrl: string;
+    token?: string;
+    model: string;
+    timeoutMs: number;
+    dailyTokenBudget: number;
+  };
   ships: { aisStreamKey?: string; bbox: [number, number, number, number]; snapshotTtl: number };
   queue: { prefix: string; concurrency: number; enabled: boolean; cacheWarmEnabled: boolean };
 }
@@ -111,7 +117,11 @@ export function configuration(): AppConfig {
     shutdownTimeoutMs: env.SHUTDOWN_TIMEOUT_MS,
     log: { level: env.LOG_LEVEL, pretty: env.LOG_PRETTY },
     database: { url: env.DATABASE_URL, logQueries: env.DATABASE_LOG_QUERIES },
-    redis: { url: env.REDIS_URL, keyPrefix: env.REDIS_KEY_PREFIX, defaultTtl: env.CACHE_TTL_DEFAULT },
+    redis: {
+      url: env.REDIS_URL,
+      keyPrefix: env.REDIS_KEY_PREFIX,
+      defaultTtl: env.CACHE_TTL_DEFAULT,
+    },
     jwt: {
       accessSecret: env.JWT_ACCESS_SECRET,
       refreshSecret: env.JWT_REFRESH_SECRET,
@@ -134,13 +144,17 @@ export function configuration(): AppConfig {
         clientId: env.GOOGLE_CLIENT_ID,
         clientSecret: env.GOOGLE_CLIENT_SECRET,
         callbackUrl: env.GOOGLE_CALLBACK_URL,
-        enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.GOOGLE_CALLBACK_URL),
+        enabled: Boolean(
+          env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.GOOGLE_CALLBACK_URL,
+        ),
       },
       github: {
         clientId: env.GITHUB_CLIENT_ID,
         clientSecret: env.GITHUB_CLIENT_SECRET,
         callbackUrl: env.GITHUB_CALLBACK_URL,
-        enabled: Boolean(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET && env.GITHUB_CALLBACK_URL),
+        enabled: Boolean(
+          env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET && env.GITHUB_CALLBACK_URL,
+        ),
       },
       successRedirect: env.OAUTH_SUCCESS_REDIRECT,
       failureRedirect: env.OAUTH_FAILURE_REDIRECT,

@@ -108,9 +108,18 @@ export class SpaceService {
 
   async spaceWeather(): Promise<SpaceWeather> {
     const [kp, plasma, magnetics, flux] = await Promise.all([
-      this.upstream.safeJson<string[][]>({ provider: 'noaaSwpc', url: UPSTREAM_URLS.swpcKpIndex, retries: 1 }, []),
-      this.upstream.safeJson<string[][]>({ provider: 'noaaSwpc', url: UPSTREAM_URLS.swpcPlasma, retries: 1 }, []),
-      this.upstream.safeJson<string[][]>({ provider: 'noaaSwpc', url: UPSTREAM_URLS.swpcMagnetics, retries: 1 }, []),
+      this.upstream.safeJson<string[][]>(
+        { provider: 'noaaSwpc', url: UPSTREAM_URLS.swpcKpIndex, retries: 1 },
+        [],
+      ),
+      this.upstream.safeJson<string[][]>(
+        { provider: 'noaaSwpc', url: UPSTREAM_URLS.swpcPlasma, retries: 1 },
+        [],
+      ),
+      this.upstream.safeJson<string[][]>(
+        { provider: 'noaaSwpc', url: UPSTREAM_URLS.swpcMagnetics, retries: 1 },
+        [],
+      ),
       this.upstream.safeJson<{ flux: number; ssn: number; time_tag: string }[]>(
         { provider: 'noaaSwpc', url: UPSTREAM_URLS.swpcSolarFlux, retries: 1 },
         [],

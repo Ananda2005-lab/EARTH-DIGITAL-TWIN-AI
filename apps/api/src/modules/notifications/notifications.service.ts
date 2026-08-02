@@ -58,7 +58,10 @@ export class NotificationsService {
     private readonly mail: MailService,
   ) {}
 
-  async list(userId: string, query: NotificationListQuery): Promise<PaginatedResult<NotificationItem>> {
+  async list(
+    userId: string,
+    query: NotificationListQuery,
+  ): Promise<PaginatedResult<NotificationItem>> {
     const where: Prisma.NotificationWhereInput = {
       userId,
       kind: query.kind,
@@ -114,13 +117,17 @@ export class NotificationsService {
   /** Deliver to one user, honouring their channel and quiet-hour preferences. */
   async create(input: CreateNotificationInput): Promise<NotificationItem | null> {
     const [user, preference] = await Promise.all([
-      this.prisma.user.findUnique({ where: { id: input.userId }, select: { email: true, name: true, deletedAt: true } }),
+      this.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { email: true, name: true, deletedAt: true },
+      }),
       this.prisma.notificationPreference.findUnique({ where: { userId: input.userId } }),
     ]);
     if (!user || user.deletedAt) return null;
     if (preference?.mutedKinds.includes(input.kind)) return null;
     if (preference && !preference.channelInApp && !preference.channelEmail) return null;
-    if (preference && isQuietHour(preference, new Date()) && input.severity !== 'critical') return null;
+    if (preference && isQuietHour(preference, new Date()) && input.severity !== 'critical')
+      return null;
 
     const notification = await this.prisma.notification.create({
       data: {
@@ -215,7 +222,10 @@ export class NotificationsService {
         audience: notification.audience ?? 'all',
       });
       delivered += result.recipients;
-      await this.prisma.notification.update({ where: { id: notification.id }, data: { sentAt: new Date() } });
+      await this.prisma.notification.update({
+        where: { id: notification.id },
+        data: { sentAt: new Date() },
+      });
     }
     return delivered;
   }
@@ -229,11 +239,14 @@ export class NotificationsService {
 
   async updatePreferences(
     userId: string,
-    input: Partial<Omit<NotificationPreferencesView, 'mutedKinds'>> & { mutedKinds?: NotificationItem['kind'][] },
+    input: Partial<Omit<NotificationPreferencesView, 'mutedKinds'>> & {
+      mutedKinds?: NotificationItem['kind'][];
+    },
   ): Promise<NotificationPreferencesView> {
     if (input.channelWebhook && !input.webhookUrl) {
       const existing = await this.prisma.notificationPreference.findUnique({ where: { userId } });
-      if (!existing?.webhookUrl) throw AppException.validation('A webhook URL is required to enable webhook delivery');
+      if (!existing?.webhookUrl)
+        throw AppException.validation('A webhook URL is required to enable webhook delivery');
     }
     const preference = await this.prisma.notificationPreference.upsert({
       where: { userId },

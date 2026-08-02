@@ -1,7 +1,14 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
-import { bboxStringSchema, shipQuerySchema, type BBox, type VesselFeed, type VesselKind, type VesselState } from '@edt/shared';
+import {
+  bboxStringSchema,
+  shipQuerySchema,
+  type BBox,
+  type VesselFeed,
+  type VesselKind,
+  type VesselState,
+} from '@edt/shared';
 import { Attribution } from 'src/common/decorators/attribution.decorator';
 import { CacheTtl } from 'src/common/decorators/cache-ttl.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -75,7 +82,10 @@ export class ShipsController {
   }
 
   @Get('status')
-  @ApiOperation({ summary: 'AIS relay status', description: 'Whether the collector is connected and how many vessels are tracked.' })
+  @ApiOperation({
+    summary: 'AIS relay status',
+    description: 'Whether the collector is connected and how many vessels are tracked.',
+  })
   @ApiOkResponse({ description: 'Relay status' })
   async status(): Promise<RelayStatus> {
     return this.ships.relayStatus();
@@ -88,7 +98,16 @@ export class ShipsController {
   @ApiOkResponse({ description: 'Ports ranked by TEU throughput' })
   async seaports(
     @Query() query: SeaportQueryDto,
-  ): Promise<{ code: string; name: string; countryCode: string; lng: number; lat: number; teu: number | null }[]> {
+  ): Promise<
+    {
+      code: string;
+      name: string;
+      countryCode: string;
+      lng: number;
+      lat: number;
+      teu: number | null;
+    }[]
+  > {
     return this.ships.seaports({ countryCode: query.countryCode, limit: query.limit });
   }
 

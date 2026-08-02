@@ -53,7 +53,12 @@ export interface HealthReport {
   status: 'ok' | 'degraded' | 'down';
   version: string;
   uptimeSeconds: number;
-  checks: { name: string; status: 'ok' | 'degraded' | 'down'; latencyMs?: number; detail?: string }[];
+  checks: {
+    name: string;
+    status: 'ok' | 'degraded' | 'down';
+    latencyMs?: number;
+    detail?: string;
+  }[];
   timestamp: string;
 }
 

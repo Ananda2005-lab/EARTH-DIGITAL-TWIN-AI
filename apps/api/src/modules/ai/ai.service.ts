@@ -120,7 +120,9 @@ export class AiService {
       data: {
         conversationId: conversation.id,
         role: 'assistant',
-        content: response?.content ?? 'The analyst service is temporarily unavailable. Please try again shortly.',
+        content:
+          response?.content ??
+          'The analyst service is temporarily unavailable. Please try again shortly.',
         intent: response?.intent ?? null,
         citations: (response?.citations ?? undefined) as Prisma.InputJsonValue | undefined,
         actions: (response?.actions ?? undefined) as Prisma.InputJsonValue | undefined,
@@ -191,7 +193,14 @@ export class AiService {
       body: { targets, dimensions: dimensions ?? null, model: ai.model },
     });
 
-    await this.logUsage(userId, ai.model, 'compare_locations', result.data.usage?.totalTokens ?? 0, Date.now() - startedAt, requestId);
+    await this.logUsage(
+      userId,
+      ai.model,
+      'compare_locations',
+      result.data.usage?.totalTokens ?? 0,
+      Date.now() - startedAt,
+      requestId,
+    );
 
     return {
       narrative: result.data.narrative,
@@ -204,9 +213,18 @@ export class AiService {
   /** Generate report content. Called by the report queue processor. */
   async generateReportContent(
     userId: string,
-    report: Pick<Report, 'id' | 'kind' | 'title' | 'target'> & { tone: string; includeCharts: boolean },
+    report: Pick<Report, 'id' | 'kind' | 'title' | 'target'> & {
+      tone: string;
+      includeCharts: boolean;
+    },
     requestId: string,
-  ): Promise<{ title: string; summary: string; content: string; sections: { heading: string; body: string; charts?: unknown }[]; tokensUsed: number }> {
+  ): Promise<{
+    title: string;
+    summary: string;
+    content: string;
+    sections: { heading: string; body: string; charts?: unknown }[];
+    tokensUsed: number;
+  }> {
     const ai = this.config.get('ai', { infer: true });
     const startedAt = Date.now();
 
@@ -229,7 +247,14 @@ export class AiService {
     });
 
     const tokensUsed = result.data.usage?.totalTokens ?? 0;
-    await this.logUsage(userId, ai.model, 'generate_report', tokensUsed, Date.now() - startedAt, requestId);
+    await this.logUsage(
+      userId,
+      ai.model,
+      'generate_report',
+      tokensUsed,
+      Date.now() - startedAt,
+      requestId,
+    );
 
     return {
       title: result.data.title ?? report.title,
@@ -240,7 +265,10 @@ export class AiService {
     };
   }
 
-  async listConversations(userId: string, query: { page: number; pageSize: number }): Promise<PaginatedResult<Conversation>> {
+  async listConversations(
+    userId: string,
+    query: { page: number; pageSize: number },
+  ): Promise<PaginatedResult<Conversation>> {
     const where: Prisma.ConversationWhereInput = { userId, archivedAt: null };
     const { skip, take } = Paginated.skipTake(query);
     const [rows, total] = await this.prisma.$transaction([
@@ -323,12 +351,16 @@ export class AiService {
   }
 
   private async requireConversation(userId: string, conversationId: string) {
-    const conversation = await this.prisma.conversation.findFirst({ where: { id: conversationId, userId } });
+    const conversation = await this.prisma.conversation.findFirst({
+      where: { id: conversationId, userId },
+    });
     if (!conversation) throw AppException.notFound('Conversation not found');
     return conversation;
   }
 
-  private async recentHistory(conversationId: string): Promise<{ role: string; content: string }[]> {
+  private async recentHistory(
+    conversationId: string,
+  ): Promise<{ role: string; content: string }[]> {
     const rows = await this.prisma.chatMessage.findMany({
       where: { conversationId },
       orderBy: { createdAt: 'desc' },
@@ -349,7 +381,9 @@ export class AiService {
     await this.prisma.aiUsageLog
       .create({ data: { userId, model, intent, totalTokens, latencyMs, ok: true, requestId } })
       .catch((error: unknown) => {
-        this.logger.warn(`Failed to log AI usage: ${error instanceof Error ? error.message : 'unknown error'}`);
+        this.logger.warn(
+          `Failed to log AI usage: ${error instanceof Error ? error.message : 'unknown error'}`,
+        );
       });
   }
 }

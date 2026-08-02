@@ -79,12 +79,16 @@ export class JobsScheduler implements OnModuleInit {
     try {
       const pruned = await this.prisma.pruneExpiredTokens();
       const hazards = await this.hazards.pruneCache();
-      const sessions = await this.prisma.session.deleteMany({ where: { expiresAt: { lt: new Date() } } });
+      const sessions = await this.prisma.session.deleteMany({
+        where: { expiresAt: { lt: new Date() } },
+      });
       this.logger.log(
         `Housekeeping: ${pruned.refreshTokens} refresh tokens, ${pruned.resets} resets, ${pruned.verifications} verifications, ${sessions.count} sessions, ${hazards} hazard rows`,
       );
     } catch (error) {
-      this.logger.warn(`Housekeeping failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+      this.logger.warn(
+        `Housekeeping failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+      );
     }
   }
 
@@ -95,7 +99,9 @@ export class JobsScheduler implements OnModuleInit {
       const delivered = await this.notifications.dispatchScheduled();
       if (delivered > 0) this.logger.log(`Dispatched ${delivered} scheduled notifications`);
     } catch (error) {
-      this.logger.warn(`Scheduled notification dispatch failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+      this.logger.warn(
+        `Scheduled notification dispatch failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+      );
     }
   }
 
@@ -114,7 +120,9 @@ export class JobsScheduler implements OnModuleInit {
       }
       if (stale.length > 0) this.logger.log(`Re-queued ${stale.length} stale reports`);
     } catch (error) {
-      this.logger.warn(`Stale report sweep failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+      this.logger.warn(
+        `Stale report sweep failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+      );
     }
   }
 }

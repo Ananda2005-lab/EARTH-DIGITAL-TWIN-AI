@@ -1,4 +1,10 @@
-import { Injectable, StreamableFile, type CallHandler, type ExecutionContext, type NestInterceptor } from '@nestjs/common';
+import {
+  Injectable,
+  StreamableFile,
+  type CallHandler,
+  type ExecutionContext,
+  type NestInterceptor,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request, Response } from 'express';
 import { map, type Observable } from 'rxjs';
@@ -34,9 +40,11 @@ export class TransformInterceptor<T> implements NestInterceptor<T, ApiResponse<T
 
     return next.handle().pipe(
       map((data) => {
-        if (data instanceof StreamableFile || Buffer.isBuffer(data) || data === undefined) return data;
+        if (data instanceof StreamableFile || Buffer.isBuffer(data) || data === undefined)
+          return data;
         const contentType = response.getHeader('content-type');
-        if (typeof contentType === 'string' && contentType.includes('text/event-stream')) return data;
+        if (typeof contentType === 'string' && contentType.includes('text/event-stream'))
+          return data;
 
         const meta: ApiMeta = {
           requestId: request.requestId,

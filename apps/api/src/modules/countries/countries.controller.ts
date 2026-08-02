@@ -1,5 +1,12 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { z } from 'zod';
 import {
   countryCodeSchema,
@@ -86,15 +93,28 @@ export class CountriesController {
 
   @Get(':code/cities')
   @CacheTtl(3600)
-  @ApiOperation({ summary: 'Largest cities in a country', description: 'Capital first, then by population.' })
+  @ApiOperation({
+    summary: 'Largest cities in a country',
+    description: 'Capital first, then by population.',
+  })
   @ApiParam({ name: 'code', example: 'BR' })
-  @ApiQuery({ name: 'limit', required: false, schema: { type: 'integer', minimum: 1, maximum: 200, default: 25 } })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    schema: { type: 'integer', minimum: 1, maximum: 200, default: 25 },
+  })
   @ApiOkResponse({ description: 'Cities' })
   async cities(
     @Param('code') code: string,
     @Query('limit') limit?: string,
   ): Promise<{ id: string; name: string; population: number; isCapital: boolean }[]> {
-    const parsed = z.coerce.number().int().min(1).max(200).default(25).parse(limit ?? 25);
+    const parsed = z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(200)
+      .default(25)
+      .parse(limit ?? 25);
     return this.countries.cities(parseCode(code), parsed);
   }
 
@@ -111,7 +131,13 @@ export class CountriesController {
     @Param('indicator') indicator: string,
     @Query('limit') limit?: string,
   ): Promise<IndicatorSeries> {
-    const parsed = z.coerce.number().int().min(1).max(200).default(64).parse(limit ?? 64);
+    const parsed = z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(200)
+      .default(64)
+      .parse(limit ?? 64);
     return this.countries.indicatorSeries(parseCode(code), indicator, parsed);
   }
 }

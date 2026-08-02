@@ -52,7 +52,11 @@ export class CircuitBreaker {
 
   /** Current state, transitioning open → half-open once the cooldown elapsed. */
   get currentState(): CircuitState {
-    if (this.state === 'open' && this.openedAt !== null && this.now() - this.openedAt >= this.resetMs) {
+    if (
+      this.state === 'open' &&
+      this.openedAt !== null &&
+      this.now() - this.openedAt >= this.resetMs
+    ) {
       this.state = 'half_open';
       this.halfOpenSuccesses = 0;
     }

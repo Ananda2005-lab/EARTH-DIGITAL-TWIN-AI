@@ -43,7 +43,7 @@ export interface CountryDetail extends CountrySummary {
   gdpGrowthPct: number | null;
   lifeExpectancy: number | null;
   hdi: number | null;
-  urbanPopulationPct: number | null
+  urbanPopulationPct: number | null;
   literacyPct: number | null;
   internetUsersPct: number | null;
   co2TonnesPerCapita: number | null;

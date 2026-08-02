@@ -16,4 +16,7 @@ export interface CacheTtlOptions {
  * `@CacheTtl(300)` or `@CacheTtl({ ttl: 60, scope: 'user' })`.
  */
 export const CacheTtl = (options: number | CacheTtlOptions): MethodDecorator & ClassDecorator =>
-  SetMetadata(CACHE_TTL_KEY, typeof options === 'number' ? { ttl: options, scope: 'global' } : options);
+  SetMetadata(
+    CACHE_TTL_KEY,
+    typeof options === 'number' ? { ttl: options, scope: 'global' } : options,
+  );

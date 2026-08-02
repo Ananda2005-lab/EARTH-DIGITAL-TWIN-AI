@@ -42,7 +42,11 @@ export function cacheSet<T>(key: string, value: T, ttlSeconds: number): T {
 }
 
 /** Memoise an async producer for `ttlSeconds`, collapsing concurrent callers. */
-export async function cached<T>(key: string, ttlSeconds: number, producer: () => Promise<T>): Promise<T> {
+export async function cached<T>(
+  key: string,
+  ttlSeconds: number,
+  producer: () => Promise<T>,
+): Promise<T> {
   const hit = cacheGet<T>(key);
   if (hit !== undefined) return hit;
 

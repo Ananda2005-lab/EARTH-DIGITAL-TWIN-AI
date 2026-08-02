@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { bboxContains, type BBox, type VesselFeed, type VesselKind, type VesselState } from '@edt/shared';
+import {
+  bboxContains,
+  type BBox,
+  type VesselFeed,
+  type VesselKind,
+  type VesselState,
+} from '@edt/shared';
 import { PrismaService } from 'src/infra/prisma/prisma.service';
 import { RedisService } from 'src/infra/redis/redis.service';
 import { AIS_SNAPSHOT_KEY, AIS_STATUS_KEY, type VesselSnapshot } from './ais.constants';
@@ -38,7 +44,8 @@ export class ShipsService {
       .map((snapshot) => toVesselState(snapshot))
       .filter((vessel) => {
         if (query.bbox && !bboxContains(query.bbox, vessel.position)) return false;
-        if (query.kinds && query.kinds.length > 0 && !query.kinds.includes(vessel.kind)) return false;
+        if (query.kinds && query.kinds.length > 0 && !query.kinds.includes(vessel.kind))
+          return false;
         if (query.minSog !== undefined && (vessel.sog ?? 0) < query.minSog) return false;
         return true;
       })
@@ -65,15 +72,27 @@ export class ShipsService {
       this.redis.get<{ lastMessageAt: string }>(AIS_STATUS_KEY),
     ]);
     return {
-      connected: Boolean(status && Date.now() - new Date(status.value.lastMessageAt).getTime() < 120_000),
+      connected: Boolean(
+        status && Date.now() - new Date(status.value.lastMessageAt).getTime() < 120_000,
+      ),
       vesselCount: count,
       lastMessageAt: status?.value.lastMessageAt ?? null,
     };
   }
 
   /** Container ports from the gazetteer, ranked by throughput. */
-  async seaports(options: { countryCode?: string; limit: number }): Promise<
-    { code: string; name: string; countryCode: string; lng: number; lat: number; teu: number | null }[]
+  async seaports(options: {
+    countryCode?: string;
+    limit: number;
+  }): Promise<
+    {
+      code: string;
+      name: string;
+      countryCode: string;
+      lng: number;
+      lat: number;
+      teu: number | null;
+    }[]
   > {
     const rows = await this.prisma.seaport.findMany({
       where: { countryCode: options.countryCode?.toUpperCase() },

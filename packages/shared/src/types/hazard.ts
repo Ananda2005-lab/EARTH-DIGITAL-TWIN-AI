@@ -57,7 +57,7 @@ export interface HazardFeed {
 
 export interface HazardStats {
   kind: HazardKind;
-  count: number
+  count: number;
   maxIntensity: number;
   bySeverity: Record<HazardSeverity, number>;
 }

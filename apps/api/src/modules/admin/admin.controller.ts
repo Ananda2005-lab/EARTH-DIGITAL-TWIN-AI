@@ -1,5 +1,13 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   countryCodeSchema,
   idSchema,
@@ -51,7 +59,10 @@ export class AdminController {
 
   @Get('overview')
   @RequirePermission('admin:read')
-  @ApiOperation({ summary: 'Platform KPIs', description: 'User, content, AI and hazard counters plus 48 h of usage.' })
+  @ApiOperation({
+    summary: 'Platform KPIs',
+    description: 'User, content, AI and hazard counters plus 48 h of usage.',
+  })
   @ApiOkResponse({ description: 'Dashboard metrics' })
   async overview(): Promise<AdminDashboard> {
     return this.admin.dashboard();
@@ -98,15 +109,23 @@ export class AdminController {
 
   @Get('reports')
   @RequirePermission('admin:read')
-  @ApiOperation({ summary: 'All generated reports', description: 'Includes cost attribution per report.' })
+  @ApiOperation({
+    summary: 'All generated reports',
+    description: 'Includes cost attribution per report.',
+  })
   @ApiPaginatedResponse({ type: 'object' }, 'Reports')
-  async reports(@Query() query: AdminReportQueryDto): Promise<PaginatedResult<Report & { userEmail: string }>> {
+  async reports(
+    @Query() query: AdminReportQueryDto,
+  ): Promise<PaginatedResult<Report & { userEmail: string }>> {
     return this.admin.listReports(query);
   }
 
   @Get('ai-logs')
   @RequirePermission('admin:read')
-  @ApiOperation({ summary: 'AI usage log', description: 'Token spend, latency, failures and moderation flags.' })
+  @ApiOperation({
+    summary: 'AI usage log',
+    description: 'Token spend, latency, failures and moderation flags.',
+  })
   @ApiPaginatedResponse({ type: 'object' }, 'AI usage entries')
   async aiLogs(@Query() query: AiLogQueryDto): Promise<PaginatedResult<AiLogEntry>> {
     return this.admin.listAiLogs(query);
@@ -119,14 +138,20 @@ export class AdminController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiBody({ schema: FlagAiLogDto.openApiSchema })
   @ApiOkResponse({ description: 'Flag updated' })
-  async flagAiLog(@Param('id') id: string, @Body() dto: FlagAiLogDto): Promise<{ flagged: boolean }> {
+  async flagAiLog(
+    @Param('id') id: string,
+    @Body() dto: FlagAiLogDto,
+  ): Promise<{ flagged: boolean }> {
     await this.admin.flagAiLog(uuid(id, 'Log id'), dto.flagged);
     return { flagged: dto.flagged };
   }
 
   @Get('analytics')
   @RequirePermission('admin:read')
-  @ApiOperation({ summary: 'Traffic and error budget series', description: 'Hourly roll-ups from usage_metrics.' })
+  @ApiOperation({
+    summary: 'Traffic and error budget series',
+    description: 'Hourly roll-ups from usage_metrics.',
+  })
   @ApiOkResponse({ description: 'Usage series' })
   async analytics(): Promise<AdminDashboard['usage']> {
     return (await this.admin.dashboard()).usage;
@@ -157,7 +182,10 @@ export class AdminController {
   @ApiBody({ schema: PatchCityDto.openApiSchema })
   @ApiOkResponse({ description: 'City updated' })
   @ApiResponse({ status: 404, description: 'City not found' })
-  async patchCity(@Param('id') id: string, @Body() dto: PatchCityDto): Promise<{ id: string; updatedAt: string }> {
+  async patchCity(
+    @Param('id') id: string,
+    @Body() dto: PatchCityDto,
+  ): Promise<{ id: string; updatedAt: string }> {
     return this.admin.patchCity(uuid(id, 'City id'), dto);
   }
 
@@ -172,7 +200,10 @@ export class AdminController {
   @Post('feature-flags')
   @RequirePermission('admin:flags')
   @Audit({ action: 'admin.flag_upsert', resource: 'feature_flag' })
-  @ApiOperation({ summary: 'Create or update a feature flag', description: 'Rollout is a deterministic 0-100 percentage.' })
+  @ApiOperation({
+    summary: 'Create or update a feature flag',
+    description: 'Rollout is a deterministic 0-100 percentage.',
+  })
   @ApiBody({ schema: FeatureFlagDto.openApiSchema })
   @ApiOkResponse({ description: 'Flag saved' })
   async upsertFlag(
@@ -187,7 +218,8 @@ export class AdminController {
   @Audit({ action: 'admin.broadcast', resource: 'notification' })
   @ApiOperation({
     summary: 'Broadcast a notification',
-    description: 'Sends immediately, or stores it for the scheduler when `scheduledFor` is in the future.',
+    description:
+      'Sends immediately, or stores it for the scheduler when `scheduledFor` is in the future.',
   })
   @ApiBody({ schema: BroadcastDto.openApiSchema })
   @ApiOkResponse({ description: 'Recipient count' })

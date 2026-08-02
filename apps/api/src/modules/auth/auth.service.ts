@@ -47,7 +47,10 @@ export class AuthService {
 
   async register(input: RegisterInput, context: RequestContextInfo): Promise<AuthSession> {
     const security = this.config.get('security', { infer: true });
-    const existing = await this.prisma.user.findUnique({ where: { email: input.email }, select: { id: true } });
+    const existing = await this.prisma.user.findUnique({
+      where: { email: input.email },
+      select: { id: true },
+    });
     if (existing) throw AppException.conflict('An account with this email already exists');
 
     const user = await this.prisma.user.create({
@@ -85,10 +88,14 @@ export class AuthService {
 
   async login(input: LoginInput, context: RequestContextInfo): Promise<AuthSession> {
     const security = this.config.get('security', { infer: true });
-    const user = await this.prisma.user.findUnique({ where: { email: input.email }, include: USER_INCLUDE });
+    const user = await this.prisma.user.findUnique({
+      where: { email: input.email },
+      include: USER_INCLUDE,
+    });
 
     // Constant-ish work regardless of whether the account exists.
-    const passwordHash = user?.passwordHash ?? '$2a$12$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinv';
+    const passwordHash =
+      user?.passwordHash ?? '$2a$12$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinv';
     const passwordMatches = await compare(input.password, passwordHash);
 
     if (!user || !user.passwordHash || !passwordMatches) {
@@ -118,7 +125,12 @@ export class AuthService {
 
     const updated = await this.prisma.user.update({
       where: { id: user.id },
-      data: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date(), lastSeenAt: new Date() },
+      data: {
+        failedLoginCount: 0,
+        lockedUntil: null,
+        lastLoginAt: new Date(),
+        lastSeenAt: new Date(),
+      },
       include: USER_INCLUDE,
     });
 
@@ -148,7 +160,11 @@ export class AuthService {
     return this.toSession(toUserProfile(user), issued);
   }
 
-  async logout(refreshToken: string | undefined, userId: string | null, context: RequestContextInfo): Promise<void> {
+  async logout(
+    refreshToken: string | undefined,
+    userId: string | null,
+    context: RequestContextInfo,
+  ): Promise<void> {
     if (refreshToken) await this.tokens.revokeByToken(refreshToken, 'logout');
     if (userId) {
       await this.audit.record({
@@ -192,7 +208,10 @@ export class AuthService {
     }
 
     const [, user] = await this.prisma.$transaction([
-      this.prisma.emailVerificationToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
+      this.prisma.emailVerificationToken.update({
+        where: { id: record.id },
+        data: { usedAt: new Date() },
+      }),
       this.prisma.user.update({
         where: { id: record.userId },
         data: { emailVerified: true, emailVerifiedAt: new Date(), status: 'active' },
@@ -223,14 +242,19 @@ export class AuthService {
 
   async resetPassword(token: string, password: string, context: RequestContextInfo): Promise<void> {
     const security = this.config.get('security', { infer: true });
-    const record = await this.prisma.passwordResetToken.findUnique({ where: { tokenHash: sha256(token) } });
+    const record = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash: sha256(token) },
+    });
     if (!record || record.usedAt || record.expiresAt.getTime() < Date.now()) {
       throw AppException.badRequest('This reset link is invalid or has expired');
     }
 
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: record.userId } });
     await this.prisma.$transaction([
-      this.prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
+      this.prisma.passwordResetToken.update({
+        where: { id: record.id },
+        data: { usedAt: new Date() },
+      }),
       this.prisma.user.update({
         where: { id: user.id },
         data: {
@@ -264,7 +288,8 @@ export class AuthService {
   ): Promise<void> {
     const security = this.config.get('security', { infer: true });
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
-    if (!user.passwordHash) throw AppException.badRequest('This account signs in with a social provider');
+    if (!user.passwordHash)
+      throw AppException.badRequest('This account signs in with a social provider');
     if (!(await compare(currentPassword, user.passwordHash))) {
       throw AppException.unauthorised('Current password is incorrect');
     }
@@ -273,7 +298,10 @@ export class AuthService {
       where: { id: userId },
       data: { passwordHash: await hash(newPassword, security.bcryptCost) },
     });
-    await this.tokens.revokeAllForUser(userId, { exceptSessionId: keepSessionId, reason: 'password_changed' });
+    await this.tokens.revokeAllForUser(userId, {
+      exceptSessionId: keepSessionId,
+      reason: 'password_changed',
+    });
     await this.mail.sendPasswordChanged(user.email, user.name);
     await this.audit.record({
       actorId: userId,
@@ -291,16 +319,27 @@ export class AuthService {
    * already exists, otherwise provisions a verified account (the provider has
    * already proven ownership of the address).
    */
-  async loginWithOAuth(profile: OAuthProfileInput, context: RequestContextInfo): Promise<AuthSession> {
+  async loginWithOAuth(
+    profile: OAuthProfileInput,
+    context: RequestContextInfo,
+  ): Promise<AuthSession> {
     const linked = await this.prisma.oAuthAccount.findUnique({
-      where: { provider_providerAccountId: { provider: profile.provider, providerAccountId: profile.providerAccountId } },
+      where: {
+        provider_providerAccountId: {
+          provider: profile.provider,
+          providerAccountId: profile.providerAccountId,
+        },
+      },
       include: { user: { include: USER_INCLUDE } },
     });
 
     let user = linked?.user ?? null;
 
     if (!user) {
-      const byEmail = await this.prisma.user.findUnique({ where: { email: profile.email }, include: USER_INCLUDE });
+      const byEmail = await this.prisma.user.findUnique({
+        where: { email: profile.email },
+        include: USER_INCLUDE,
+      });
       user =
         byEmail ??
         (await this.prisma.user.create({
@@ -333,7 +372,12 @@ export class AuthService {
       });
     } else {
       await this.prisma.oAuthAccount.update({
-        where: { provider_providerAccountId: { provider: profile.provider, providerAccountId: profile.providerAccountId } },
+        where: {
+          provider_providerAccountId: {
+            provider: profile.provider,
+            providerAccountId: profile.providerAccountId,
+          },
+        },
         data: { lastLoginAt: new Date() },
       });
     }
@@ -384,7 +428,10 @@ export class AuthService {
   }
 
   async revokeOtherSessions(userId: string, currentSessionId: string | null): Promise<number> {
-    return this.tokens.revokeAllForUser(userId, { exceptSessionId: currentSessionId, reason: 'revoked_others' });
+    return this.tokens.revokeAllForUser(userId, {
+      exceptSessionId: currentSessionId,
+      reason: 'revoked_others',
+    });
   }
 
   private async registerFailedLogin(
@@ -401,7 +448,8 @@ export class AuthService {
         lockedUntil: shouldLock ? new Date(Date.now() + security.loginLockMinutes * 60_000) : null,
       },
     });
-    if (shouldLock) this.logger.warn(`Account ${userId} locked after ${failedLoginCount} failed attempts`);
+    if (shouldLock)
+      this.logger.warn(`Account ${userId} locked after ${failedLoginCount} failed attempts`);
   }
 
   private toSession(

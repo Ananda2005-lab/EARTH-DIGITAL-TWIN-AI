@@ -27,7 +27,10 @@ export class HealthController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Liveness probe', description: 'Always 200 while the process can serve traffic.' })
+  @ApiOperation({
+    summary: 'Liveness probe',
+    description: 'Always 200 while the process can serve traffic.',
+  })
   @ApiOkResponse({ description: 'Process is alive' })
   live(): { status: 'ok'; version: string; uptimeSeconds: number; timestamp: string } {
     return {
@@ -39,9 +42,15 @@ export class HealthController {
   }
 
   @Get('ready')
-  @ApiOperation({ summary: 'Readiness probe', description: 'Reports database, cache and upstream provider health.' })
+  @ApiOperation({
+    summary: 'Readiness probe',
+    description: 'Reports database, cache and upstream provider health.',
+  })
   @ApiOkResponse({ description: 'Dependency health report' })
-  @ApiResponse({ status: 200, description: 'Always 200; inspect `status` for ok / degraded / down' })
+  @ApiResponse({
+    status: 200,
+    description: 'Always 200; inspect `status` for ok / degraded / down',
+  })
   async ready(): Promise<HealthReport> {
     const checks: HealthReport['checks'] = [];
 
@@ -67,11 +76,16 @@ export class HealthController {
       });
     }
 
-    const open = this.upstream.circuitSnapshots().filter((circuit: CircuitSnapshot) => circuit.state === 'open');
+    const open = this.upstream
+      .circuitSnapshots()
+      .filter((circuit: CircuitSnapshot) => circuit.state === 'open');
     checks.push({
       name: 'upstream-providers',
       status: open.length === 0 ? 'ok' : open.length > 3 ? 'down' : 'degraded',
-      detail: open.length === 0 ? 'all providers responding' : `open: ${open.map((circuit) => circuit.name).join(', ')}`,
+      detail:
+        open.length === 0
+          ? 'all providers responding'
+          : `open: ${open.map((circuit) => circuit.name).join(', ')}`,
     });
 
     return {

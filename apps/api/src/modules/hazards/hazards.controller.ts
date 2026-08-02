@@ -75,7 +75,10 @@ export class HazardsController {
 
   @Get('nearby')
   @CacheTtl(300)
-  @ApiOperation({ summary: 'Hazards near a coordinate', description: 'Sorted by great-circle distance.' })
+  @ApiOperation({
+    summary: 'Hazards near a coordinate',
+    description: 'Sorted by great-circle distance.',
+  })
   @ApiOkResponse({ description: 'Nearby hazards with distances' })
   async nearby(@Query() query: HazardNearbyDto): Promise<(HazardEvent & { distanceKm: number })[]> {
     return this.hazards.nearby({ lng: query.lng, lat: query.lat }, query.radiusKm, query.hours);

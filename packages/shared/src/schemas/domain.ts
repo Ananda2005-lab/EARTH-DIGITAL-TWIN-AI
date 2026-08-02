@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { LAYER_IDS } from '../constants/layers';
-import { bboxSchema, countryCodeSchema, lngLatSchema, paginationSchema, sortSchema, viewStateSchema } from './common';
+import {
+  bboxSchema,
+  countryCodeSchema,
+  lngLatSchema,
+  paginationSchema,
+  sortSchema,
+  viewStateSchema,
+} from './common';
 
 const layerIdSchema = z.string().refine((id) => LAYER_IDS.includes(id), 'Unknown layer id');
 
@@ -130,7 +137,14 @@ export const hazardQuerySchema = z.object({
   kinds: z
     .string()
     .optional()
-    .transform((v) => (v ? v.split(',').map((s) => s.trim()).filter(Boolean) : undefined))
+    .transform((v) =>
+      v
+        ? v
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : undefined,
+    )
     .pipe(
       z
         .array(
@@ -176,7 +190,14 @@ export const indicatorQuerySchema = z.object({
   countries: z
     .string()
     .optional()
-    .transform((v) => (v ? v.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean) : undefined)),
+    .transform((v) =>
+      v
+        ? v
+            .split(',')
+            .map((s) => s.trim().toUpperCase())
+            .filter(Boolean)
+        : undefined,
+    ),
   from: z.coerce.number().int().min(1900).max(2100).optional(),
   to: z.coerce.number().int().min(1900).max(2100).optional(),
   limit: z.coerce.number().int().min(1).max(300).default(60),
@@ -265,7 +286,9 @@ export const featureFlagSchema = z.object({
   description: z.string().trim().max(500).default(''),
   enabled: z.boolean().default(false),
   rollout: z.number().int().min(0).max(100).default(0),
-  audience: z.array(z.enum(['free', 'pro', 'team', 'enterprise', 'internal'])).default(['internal']),
+  audience: z
+    .array(z.enum(['free', 'pro', 'team', 'enterprise', 'internal']))
+    .default(['internal']),
 });
 
 export const createApiKeySchema = z.object({

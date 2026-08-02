@@ -26,14 +26,28 @@ export class ApiKeyGuard implements CanActivate {
 
     const record = await this.prisma.apiKey.findUnique({
       where: { keyHash: sha256(presented) },
-      include: { owner: { select: { id: true, email: true, name: true, role: true, plan: true, status: true, emailVerified: true, mfaEnabled: true } } },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            plan: true,
+            status: true,
+            emailVerified: true,
+            mfaEnabled: true,
+          },
+        },
+      },
     });
 
     if (!record || record.revokedAt) throw AppException.unauthorised('API key is not valid');
     if (record.expiresAt && record.expiresAt.getTime() < Date.now()) {
       throw AppException.unauthorised('API key has expired');
     }
-    if (record.owner.status === 'suspended') throw AppException.forbidden('The key owner is suspended');
+    if (record.owner.status === 'suspended')
+      throw AppException.forbidden('The key owner is suspended');
 
     request.user = {
       id: record.owner.id,

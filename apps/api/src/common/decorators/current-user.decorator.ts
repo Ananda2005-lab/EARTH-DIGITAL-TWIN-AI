@@ -8,7 +8,10 @@ import type { AuthenticatedUser } from '../types/authenticated-user';
  * `@CurrentUser({ optional: true })` where anonymous access is allowed.
  */
 export const CurrentUser = createParamDecorator(
-  (options: { optional?: boolean } | undefined, context: ExecutionContext): AuthenticatedUser | undefined => {
+  (
+    options: { optional?: boolean } | undefined,
+    context: ExecutionContext,
+  ): AuthenticatedUser | undefined => {
     const request = context.switchToHttp().getRequest<Request>();
     const user = request.user;
     if (!user) {

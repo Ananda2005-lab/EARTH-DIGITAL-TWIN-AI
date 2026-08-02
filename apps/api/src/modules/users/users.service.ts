@@ -33,7 +33,10 @@ export class UsersService {
   ) {}
 
   async profile(userId: string): Promise<UserProfile> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, include: USER_INCLUDE });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: USER_INCLUDE,
+    });
     if (!user || user.deletedAt) throw AppException.notFound('User not found');
     return toUserProfile(user);
   }
@@ -111,7 +114,8 @@ export class UsersService {
    */
   async closeAccount(userId: string): Promise<void> {
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
-    if (user.role === 'owner') throw AppException.forbidden('The platform owner account cannot be closed');
+    if (user.role === 'owner')
+      throw AppException.forbidden('The platform owner account cannot be closed');
 
     await this.tokens.revokeAllForUser(userId, { reason: 'account_closed' });
     await this.prisma.$transaction([

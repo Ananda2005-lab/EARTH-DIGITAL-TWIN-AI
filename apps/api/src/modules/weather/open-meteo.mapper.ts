@@ -160,7 +160,11 @@ export function mapDaily(daily?: Record<string, (number | string | null)[]>): We
   });
 }
 
-export function mapWeatherBundle(raw: RawOpenMeteo, point: LngLat, attribution: string): WeatherBundle {
+export function mapWeatherBundle(
+  raw: RawOpenMeteo,
+  point: LngLat,
+  attribution: string,
+): WeatherBundle {
   const current = raw.current ?? {};
   const code = num(current.weather_code, 3);
   return {
@@ -192,7 +196,11 @@ export function mapWeatherBundle(raw: RawOpenMeteo, point: LngLat, attribution: 
   };
 }
 
-export function mapAirQualityBundle(raw: RawOpenMeteo, point: LngLat, attribution: string): AirQualityBundle {
+export function mapAirQualityBundle(
+  raw: RawOpenMeteo,
+  point: LngLat,
+  attribution: string,
+): AirQualityBundle {
   const current = raw.current ?? {};
   const concentrations = {
     pm25: num(current.pm2_5),
@@ -239,7 +247,9 @@ export function mapAirQualityBundle(raw: RawOpenMeteo, point: LngLat, attributio
       observedAt: new Date().toISOString(),
     },
     hourly,
-    pollen: pollen.some((entry) => entry.grass !== undefined || entry.birch !== undefined) ? pollen : undefined,
+    pollen: pollen.some((entry) => entry.grass !== undefined || entry.birch !== undefined)
+      ? pollen
+      : undefined,
     attribution,
     fetchedAt: new Date().toISOString(),
   };
@@ -257,7 +267,10 @@ function pushFinite(target: number[], value: unknown): void {
 
 export function aggregateMonthlyNormals(raw: RawOpenMeteo): ClimateNormal[] {
   const dates = times(raw.daily);
-  const buckets = new Map<number, { mean: number[]; max: number[]; min: number[]; precipitation: number[] }>();
+  const buckets = new Map<
+    number,
+    { mean: number[]; max: number[]; min: number[]; precipitation: number[] }
+  >();
   dates.forEach((date, index) => {
     const month = Number(date.slice(5, 7));
     const bucket = buckets.get(month) ?? { mean: [], max: [], min: [], precipitation: [] };
@@ -277,7 +290,9 @@ export function aggregateMonthlyNormals(raw: RawOpenMeteo): ClimateNormal[] {
       temperatureMean: average(bucket?.mean ?? []),
       temperatureMax: average(bucket?.max ?? []),
       temperatureMin: average(bucket?.min ?? []),
-      precipitation: Number((precipitation.reduce((total, value) => total + value, 0) / years).toFixed(1)),
+      precipitation: Number(
+        (precipitation.reduce((total, value) => total + value, 0) / years).toFixed(1),
+      ),
     };
   });
 }
@@ -300,7 +315,9 @@ export function aggregateAnnualTrend(raw: RawOpenMeteo): ClimateTrendPoint[] {
       year,
       temperatureMean: average(bucket.mean),
       anomaly: 0,
-      precipitation: Number(bucket.precipitation.reduce((total, value) => total + value, 0).toFixed(0)),
+      precipitation: Number(
+        bucket.precipitation.reduce((total, value) => total + value, 0).toFixed(0),
+      ),
     }));
 }
 
@@ -318,7 +335,10 @@ export function linearSlope(points: { x: number; y: number }[]): number {
 }
 
 /** Simplified Köppen-Geiger classification from monthly normals. */
-export function classifyKoppen(normals: ClimateNormal[], latitude: number): { code: string; label: string } {
+export function classifyKoppen(
+  normals: ClimateNormal[],
+  latitude: number,
+): { code: string; label: string } {
   if (normals.length !== 12) return { code: '—', label: 'Unclassified' };
   const temperatures = normals.map((normal) => normal.temperatureMean);
   const precipitation = normals.map((normal) => normal.precipitation);
@@ -327,13 +347,18 @@ export function classifyKoppen(normals: ClimateNormal[], latitude: number): { co
   const coldest = Math.min(...temperatures);
   const warmest = Math.max(...temperatures);
   const summerMonths = latitude >= 0 ? [3, 4, 5, 6, 7, 8] : [9, 10, 11, 0, 1, 2];
-  const summerPrecipitation = summerMonths.reduce((total, month) => total + (precipitation[month] ?? 0), 0);
+  const summerPrecipitation = summerMonths.reduce(
+    (total, month) => total + (precipitation[month] ?? 0),
+    0,
+  );
   const winterPrecipitation = annualPrecipitation - summerPrecipitation;
   const share = annualPrecipitation === 0 ? 0 : summerPrecipitation / annualPrecipitation;
   const winterShare = annualPrecipitation === 0 ? 0 : winterPrecipitation / annualPrecipitation;
-  const aridityThreshold = 20 * annualTemperature + (share > 0.7 ? 280 : winterShare > 0.7 ? 0 : 140);
+  const aridityThreshold =
+    20 * annualTemperature + (share > 0.7 ? 280 : winterShare > 0.7 ? 0 : 140);
 
-  if (warmest < 10) return coldest < -3 ? { code: 'EF', label: 'Ice cap' } : { code: 'ET', label: 'Tundra' };
+  if (warmest < 10)
+    return coldest < -3 ? { code: 'EF', label: 'Ice cap' } : { code: 'ET', label: 'Tundra' };
   if (annualPrecipitation < aridityThreshold) {
     const code = annualPrecipitation < aridityThreshold / 2 ? 'BW' : 'BS';
     const heat = annualTemperature >= 18 ? 'h' : 'k';
@@ -351,7 +376,9 @@ export function classifyKoppen(normals: ClimateNormal[], latitude: number): { co
   if (coldest > -3) {
     const summerDry = Math.min(...summerMonths.map((month) => precipitation[month] ?? 0)) < 30;
     if (summerDry) return { code: 'Csa', label: 'Mediterranean' };
-    return warmest >= 22 ? { code: 'Cfa', label: 'Humid subtropical' } : { code: 'Cfb', label: 'Oceanic' };
+    return warmest >= 22
+      ? { code: 'Cfa', label: 'Humid subtropical' }
+      : { code: 'Cfb', label: 'Oceanic' };
   }
   return warmest >= 22
     ? { code: 'Dfa', label: 'Hot-summer continental' }

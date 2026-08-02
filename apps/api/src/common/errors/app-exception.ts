@@ -27,7 +27,10 @@ export class AppException extends HttpException {
     return new AppException(HttpStatus.UNAUTHORIZED, 'UNAUTHORISED', message, details);
   }
 
-  static forbidden(message = 'You do not have access to this resource', details?: unknown): AppException {
+  static forbidden(
+    message = 'You do not have access to this resource',
+    details?: unknown,
+  ): AppException {
     return new AppException(HttpStatus.FORBIDDEN, 'FORBIDDEN', message, details);
   }
 
@@ -43,8 +46,16 @@ export class AppException extends HttpException {
     return new AppException(HttpStatus.TOO_MANY_REQUESTS, 'RATE_LIMITED', message, details);
   }
 
-  static upstreamUnavailable(message = 'Upstream provider unavailable', details?: unknown): AppException {
-    return new AppException(HttpStatus.SERVICE_UNAVAILABLE, 'UPSTREAM_UNAVAILABLE', message, details);
+  static upstreamUnavailable(
+    message = 'Upstream provider unavailable',
+    details?: unknown,
+  ): AppException {
+    return new AppException(
+      HttpStatus.SERVICE_UNAVAILABLE,
+      'UPSTREAM_UNAVAILABLE',
+      message,
+      details,
+    );
   }
 
   static internal(message = 'Unexpected server error', details?: unknown): AppException {

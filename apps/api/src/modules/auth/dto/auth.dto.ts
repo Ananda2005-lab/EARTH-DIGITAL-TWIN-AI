@@ -20,9 +20,16 @@ import { zodDto } from 'src/common/zod/zod-dto';
 const refreshPartialSchema = refreshSchema.partial();
 
 export const verifyEmailSchema = z.object({ token: z.string().min(20).max(512) });
-export const resendVerificationSchema = z.object({ email: z.string().trim().toLowerCase().email() });
+export const resendVerificationSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+});
 export const mfaCodeSchema = z.object({
-  code: z.string().trim().min(6).max(16).describe('6-digit TOTP code or an xxxx-xxxx recovery code'),
+  code: z
+    .string()
+    .trim()
+    .min(6)
+    .max(16)
+    .describe('6-digit TOTP code or an xxxx-xxxx recovery code'),
 });
 export const unlinkProviderSchema = z.object({ provider: z.enum(['google', 'github']) });
 

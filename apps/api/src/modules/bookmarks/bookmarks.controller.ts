@@ -1,5 +1,24 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   createBookmarkSchema,
   createCollectionSchema,
@@ -38,7 +57,10 @@ export class BookmarksController {
   constructor(private readonly bookmarks: BookmarksService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List your bookmarks', description: 'Pinned entries first, then by the chosen sort.' })
+  @ApiOperation({
+    summary: 'List your bookmarks',
+    description: 'Pinned entries first, then by the chosen sort.',
+  })
   @ApiPaginatedResponse({ type: 'object' }, 'Bookmarks')
   async list(
     @CurrentUser() user: AuthenticatedUser,
@@ -55,7 +77,10 @@ export class BookmarksController {
   @ApiBody({ schema: CreateBookmarkDto.openApiSchema })
   @ApiResponse({ status: 201, description: 'Bookmark created' })
   @ApiResponse({ status: 404, description: 'Collection not found' })
-  async create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateBookmarkDto): Promise<Bookmark> {
+  async create(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CreateBookmarkDto,
+  ): Promise<Bookmark> {
     return this.bookmarks.create(user.id, dto);
   }
 
@@ -107,10 +132,16 @@ export class BookmarksController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission('bookmark:write')
   @Audit({ action: 'bookmark.collection_delete', resource: 'bookmark_collection', idParam: 'id' })
-  @ApiOperation({ summary: 'Delete a collection', description: 'Its bookmarks are kept and become uncategorised.' })
+  @ApiOperation({
+    summary: 'Delete a collection',
+    description: 'Its bookmarks are kept and become uncategorised.',
+  })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 204, description: 'Collection deleted' })
-  async removeCollection(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<void> {
+  async removeCollection(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ): Promise<void> {
     await this.bookmarks.removeCollection(user.id, assertUuid(id, 'Collection id'));
   }
 

@@ -9,12 +9,17 @@ import type { AuthenticatedUser } from '../types/authenticated-user';
  */
 @Injectable()
 export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
-  override canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+  override canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
     if (context.getType() !== 'http') return true;
     return super.canActivate(context);
   }
 
-  override handleRequest<TUser = AuthenticatedUser | undefined>(_err: unknown, user: unknown): TUser {
+  override handleRequest<TUser = AuthenticatedUser | undefined>(
+    _err: unknown,
+    user: unknown,
+  ): TUser {
     return (user === false || user === null ? undefined : user) as TUser;
   }
 }

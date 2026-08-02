@@ -40,7 +40,11 @@ interface RawForecast {
 
 /** Current conditions + 168 h hourly + 16 d daily in a single upstream call. */
 export async function getWeather(point: LngLat, timezone = 'auto'): Promise<WeatherBundle> {
-  const key = cacheKey('open-meteo:weather', { lat: round(point.lat), lng: round(point.lng), timezone });
+  const key = cacheKey('open-meteo:weather', {
+    lat: round(point.lat),
+    lng: round(point.lng),
+    timezone,
+  });
   return cached(key, 600, async () => {
     const url = buildUrl(FORECAST_URL, {
       latitude: point.lat,
@@ -211,7 +215,10 @@ export async function getAirQuality(point: LngLat, timezone = 'auto'): Promise<A
       past_days: 1,
     });
 
-    const raw = await fetchUpstream<RawForecast>(url, { provider: 'Open-Meteo AQ', revalidate: 1800 });
+    const raw = await fetchUpstream<RawForecast>(url, {
+      provider: 'Open-Meteo AQ',
+      revalidate: 1800,
+    });
     const current = raw.current ?? {};
     const concentrations = {
       pm25: num(current.pm2_5),
@@ -225,24 +232,26 @@ export async function getAirQuality(point: LngLat, timezone = 'auto'): Promise<A
     const usAqi = Number(current.us_aqi);
     const aqi = Number.isFinite(usAqi) && usAqi > 0 ? Math.round(usAqi) : composite.aqi;
 
-    const hourly: AirQualityHourly[] = (raw.hourly?.time as string[] | undefined)?.map((time, i) => ({
-      time,
-      aqi: Math.round(num(raw.hourly?.us_aqi?.[i])),
-      pm25: num(raw.hourly?.pm2_5?.[i]),
-      pm10: num(raw.hourly?.pm10?.[i]),
-      no2: num(raw.hourly?.nitrogen_dioxide?.[i]),
-      o3: num(raw.hourly?.ozone?.[i]),
-    })) ?? [];
+    const hourly: AirQualityHourly[] =
+      (raw.hourly?.time as string[] | undefined)?.map((time, i) => ({
+        time,
+        aqi: Math.round(num(raw.hourly?.us_aqi?.[i])),
+        pm25: num(raw.hourly?.pm2_5?.[i]),
+        pm10: num(raw.hourly?.pm10?.[i]),
+        no2: num(raw.hourly?.nitrogen_dioxide?.[i]),
+        o3: num(raw.hourly?.ozone?.[i]),
+      })) ?? [];
 
-    const pollen: PollenForecast[] = (raw.hourly?.time as string[] | undefined)?.map((time, i) => ({
-      time,
-      alder: optional(raw.hourly?.alder_pollen?.[i]),
-      birch: optional(raw.hourly?.birch_pollen?.[i]),
-      grass: optional(raw.hourly?.grass_pollen?.[i]),
-      mugwort: optional(raw.hourly?.mugwort_pollen?.[i]),
-      olive: optional(raw.hourly?.olive_pollen?.[i]),
-      ragweed: optional(raw.hourly?.ragweed_pollen?.[i]),
-    })) ?? [];
+    const pollen: PollenForecast[] =
+      (raw.hourly?.time as string[] | undefined)?.map((time, i) => ({
+        time,
+        alder: optional(raw.hourly?.alder_pollen?.[i]),
+        birch: optional(raw.hourly?.birch_pollen?.[i]),
+        grass: optional(raw.hourly?.grass_pollen?.[i]),
+        mugwort: optional(raw.hourly?.mugwort_pollen?.[i]),
+        olive: optional(raw.hourly?.olive_pollen?.[i]),
+        ragweed: optional(raw.hourly?.ragweed_pollen?.[i]),
+      })) ?? [];
 
     return {
       location: { lng: raw.longitude, lat: raw.latitude },
@@ -258,7 +267,9 @@ export async function getAirQuality(point: LngLat, timezone = 'auto'): Promise<A
         observedAt: new Date().toISOString(),
       },
       hourly,
-      pollen: pollen.some((p) => p.grass !== undefined || p.birch !== undefined) ? pollen : undefined,
+      pollen: pollen.some((p) => p.grass !== undefined || p.birch !== undefined)
+        ? pollen
+        : undefined,
       attribution: 'Copernicus CAMS via Open-Meteo',
       fetchedAt: new Date().toISOString(),
     };
@@ -270,14 +281,22 @@ export async function getAirQuality(point: LngLat, timezone = 'auto'): Promise<A
  * annual mean-temperature series back to 1950 for the warming trend.
  */
 export async function getClimate(point: LngLat): Promise<ClimateBundle> {
-  const key = cacheKey('open-meteo:climate', { lat: round(point.lat, 1), lng: round(point.lng, 1) });
+  const key = cacheKey('open-meteo:climate', {
+    lat: round(point.lat, 1),
+    lng: round(point.lng, 1),
+  });
   return cached(key, 86_400, async () => {
     const normalsUrl = buildUrl(ARCHIVE_URL, {
       latitude: point.lat,
       longitude: point.lng,
       start_date: '1991-01-01',
       end_date: '2020-12-31',
-      daily: ['temperature_2m_mean', 'temperature_2m_max', 'temperature_2m_min', 'precipitation_sum'].join(','),
+      daily: [
+        'temperature_2m_mean',
+        'temperature_2m_max',
+        'temperature_2m_min',
+        'precipitation_sum',
+      ].join(','),
       timezone: 'UTC',
     });
     const trendUrl = buildUrl(ARCHIVE_URL, {
@@ -290,17 +309,27 @@ export async function getClimate(point: LngLat): Promise<ClimateBundle> {
     });
 
     const [normalsRaw, trendRaw] = await Promise.all([
-      fetchUpstream<RawForecast>(normalsUrl, { provider: 'Open-Meteo Archive', revalidate: 86_400 }),
+      fetchUpstream<RawForecast>(normalsUrl, {
+        provider: 'Open-Meteo Archive',
+        revalidate: 86_400,
+      }),
       fetchUpstream<RawForecast>(trendUrl, { provider: 'Open-Meteo Archive', revalidate: 86_400 }),
     ]);
 
     const normals = aggregateMonthlyNormals(normalsRaw);
     const trend = aggregateAnnualTrend(trendRaw);
     const baseline =
-      trend.filter((p) => p.year >= 1951 && p.year <= 1980).reduce((a, p) => a + p.temperatureMean, 0) /
+      trend
+        .filter((p) => p.year >= 1951 && p.year <= 1980)
+        .reduce((a, p) => a + p.temperatureMean, 0) /
       Math.max(1, trend.filter((p) => p.year >= 1951 && p.year <= 1980).length);
-    const withAnomaly = trend.map((p) => ({ ...p, anomaly: +(p.temperatureMean - baseline).toFixed(3) }));
-    const { slope } = linearRegression(withAnomaly.map((p) => ({ x: p.year, y: p.temperatureMean })));
+    const withAnomaly = trend.map((p) => ({
+      ...p,
+      anomaly: +(p.temperatureMean - baseline).toFixed(3),
+    }));
+    const { slope } = linearRegression(
+      withAnomaly.map((p) => ({ x: p.year, y: p.temperatureMean })),
+    );
     const koppen = classifyKoppen(normals, point.lat);
 
     return {
@@ -318,7 +347,10 @@ export async function getClimate(point: LngLat): Promise<ClimateBundle> {
 
 function aggregateMonthlyNormals(raw: RawForecast): ClimateNormal[] {
   const times = (raw.daily?.time as string[] | undefined) ?? [];
-  const buckets = new Map<number, { mean: number[]; max: number[]; min: number[]; precip: number[] }>();
+  const buckets = new Map<
+    number,
+    { mean: number[]; max: number[]; min: number[]; precip: number[] }
+  >();
   times.forEach((date, i) => {
     const month = Number(date.slice(5, 7));
     const bucket = buckets.get(month) ?? { mean: [], max: [], min: [], precip: [] };
@@ -364,7 +396,10 @@ function aggregateAnnualTrend(raw: RawForecast): ClimateTrendPoint[] {
 }
 
 /** Simplified Köppen-Geiger classification from monthly normals. */
-function classifyKoppen(normals: ClimateNormal[], latitude: number): { code: string; label: string } {
+function classifyKoppen(
+  normals: ClimateNormal[],
+  latitude: number,
+): { code: string; label: string } {
   if (normals.length !== 12) return { code: '—', label: 'Unclassified' };
   const temps = normals.map((n) => n.temperatureMean);
   const precip = normals.map((n) => n.precipitation);
@@ -377,12 +412,11 @@ function classifyKoppen(normals: ClimateNormal[], latitude: number): { code: str
   const summerPrecip = summerMonths.reduce((a, m) => a + (precip[m] ?? 0), 0);
   const winterPrecip = annualPrecip - summerPrecip;
   const aridityThreshold =
-    20 * annualTemp + (summerPrecip / annualPrecip > 0.7 ? 280 : winterPrecip / annualPrecip > 0.7 ? 0 : 140);
+    20 * annualTemp +
+    (summerPrecip / annualPrecip > 0.7 ? 280 : winterPrecip / annualPrecip > 0.7 ? 0 : 140);
 
   if (warmest < 10) {
-    return coldest < -3
-      ? { code: 'EF', label: 'Ice cap' }
-      : { code: 'ET', label: 'Tundra' };
+    return coldest < -3 ? { code: 'EF', label: 'Ice cap' } : { code: 'ET', label: 'Tundra' };
   }
   if (annualPrecip < aridityThreshold) {
     const code = annualPrecip < aridityThreshold / 2 ? 'BW' : 'BS';
@@ -454,7 +488,10 @@ export async function geocode(query: string, limit = 12, language = 'en'): Promi
   const key = cacheKey('open-meteo:geocode', { query: query.toLowerCase(), limit, language });
   return cached(key, 3600, async () => {
     const url = buildUrl(GEOCODE_URL, { name: query, count: limit, language, format: 'json' });
-    const raw = await fetchUpstream<RawGeocode>(url, { provider: 'Open-Meteo Geocoding', revalidate: 3600 });
+    const raw = await fetchUpstream<RawGeocode>(url, {
+      provider: 'Open-Meteo Geocoding',
+      revalidate: 3600,
+    });
     return (raw.results ?? []).map((r) => {
       const hierarchy = [r.name, r.admin1, r.country].filter(Boolean).join(', ');
       return {
@@ -474,7 +511,10 @@ export async function geocode(query: string, limit = 12, language = 'en'): Promi
 
 /** Reverse geocode by finding the nearest populated place. */
 export async function reverseGeocode(point: LngLat): Promise<Place | null> {
-  const key = cacheKey('open-meteo:reverse', { lat: round(point.lat, 2), lng: round(point.lng, 2) });
+  const key = cacheKey('open-meteo:reverse', {
+    lat: round(point.lat, 2),
+    lng: round(point.lng, 2),
+  });
   return cached(key, 3600, async () => {
     // Open-Meteo has no reverse endpoint; BigDataCloud's free tier is key-less.
     const url = buildUrl('https://api.bigdatacloud.net/data/reverse-geocode-client', {
@@ -537,12 +577,22 @@ export async function getMarine(point: LngLat): Promise<MarineConditions | null>
     const url = buildUrl(MARINE_URL, {
       latitude: point.lat,
       longitude: point.lng,
-      current: ['wave_height', 'wave_period', 'wave_direction', 'swell_wave_height', 'sea_surface_temperature'].join(','),
+      current: [
+        'wave_height',
+        'wave_period',
+        'wave_direction',
+        'swell_wave_height',
+        'sea_surface_temperature',
+      ].join(','),
       hourly: ['wave_height', 'sea_surface_temperature'].join(','),
       forecast_days: 5,
     });
     try {
-      const raw = await fetchUpstream<RawForecast>(url, { provider: 'Open-Meteo Marine', revalidate: 10_800, retries: 1 });
+      const raw = await fetchUpstream<RawForecast>(url, {
+        provider: 'Open-Meteo Marine',
+        revalidate: 10_800,
+        retries: 1,
+      });
       const current = raw.current ?? {};
       const times = (raw.hourly?.time as string[] | undefined) ?? [];
       return {
@@ -568,7 +618,12 @@ export async function getMarine(point: LngLat): Promise<MarineConditions | null>
 
 /** Sample a coarse grid of a scalar field for heatmap/contour rendering. */
 export async function sampleWeatherGrid(
-  variable: 'temperature_2m' | 'wind_speed_10m' | 'relative_humidity_2m' | 'pressure_msl' | 'cloud_cover',
+  variable:
+    | 'temperature_2m'
+    | 'wind_speed_10m'
+    | 'relative_humidity_2m'
+    | 'pressure_msl'
+    | 'cloud_cover',
   bbox: [number, number, number, number],
   resolution = 6,
 ): Promise<{ lng: number; lat: number; value: number }[]> {
@@ -581,7 +636,11 @@ export async function sampleWeatherGrid(
       points.push({ lng: west + i * lngStep, lat: south + j * latStep });
     }
   }
-  const key = cacheKey('open-meteo:grid', { variable, bbox: bbox.map((n) => round(n, 1)).join(','), resolution });
+  const key = cacheKey('open-meteo:grid', {
+    variable,
+    bbox: bbox.map((n) => round(n, 1)).join(','),
+    resolution,
+  });
   return cached(key, 1800, async () => {
     const url = buildUrl(FORECAST_URL, {
       latitude: points.map((p) => round(p.lat, 3)).join(','),

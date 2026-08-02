@@ -1,0 +1,14 @@
+# Normalise to LF in the repository and in working copies. Without this, Windows
+# checkouts get CRLF while Prettier writes LF, so every file looks modified.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.pdf binary

@@ -45,7 +45,10 @@ export class HazardAlertProcessor extends WorkerHost {
   }
 
   private async fanOut(event: HazardEvent): Promise<number> {
-    const candidateIds = await this.prisma.findAlertIdsWithinRadius(event.location.lng, event.location.lat);
+    const candidateIds = await this.prisma.findAlertIdsWithinRadius(
+      event.location.lng,
+      event.location.lat,
+    );
     if (candidateIds.length === 0) return 0;
 
     const alerts = await this.prisma.alert.findMany({
@@ -60,22 +63,33 @@ export class HazardAlertProcessor extends WorkerHost {
       if (alert.user.deletedAt || alert.user.status === 'suspended') continue;
       if (alert.kinds.length > 0 && !alert.kinds.includes(event.kind)) continue;
       if (
-        HAZARD_SEVERITY_ORDER.indexOf(event.severity) < HAZARD_SEVERITY_ORDER.indexOf(alert.minSeverity)
+        HAZARD_SEVERITY_ORDER.indexOf(event.severity) <
+        HAZARD_SEVERITY_ORDER.indexOf(alert.minSeverity)
       ) {
         continue;
       }
 
-      const distanceKm = haversineDistance({ lng: alert.lng, lat: alert.lat }, event.location) / 1000;
+      const distanceKm =
+        haversineDistance({ lng: alert.lng, lat: alert.lat }, event.location) / 1000;
       if (distanceKm > alert.radiusKm) continue;
 
       const created = await this.notifications.create({
         userId: alert.userId,
         kind: 'hazard',
-        severity: event.severity === 'extreme' ? 'critical' : event.severity === 'high' ? 'warning' : 'info',
+        severity:
+          event.severity === 'extreme'
+            ? 'critical'
+            : event.severity === 'high'
+              ? 'warning'
+              : 'info',
         title: `${event.title}`,
         body: `${event.severity.toUpperCase()} ${event.kind} ${distanceKm.toFixed(0)} km from "${alert.name}". Source: ${event.source}.`,
         actionUrl: `${webAppUrl}/hazards?focus=${encodeURIComponent(event.id)}`,
-        metadata: { hazardId: event.id, alertId: alert.id, distanceKm: Number(distanceKm.toFixed(1)) },
+        metadata: {
+          hazardId: event.id,
+          alertId: alert.id,
+          distanceKm: Number(distanceKm.toFixed(1)),
+        },
         email: alert.channels.includes('email'),
       });
 

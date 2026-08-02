@@ -9,12 +9,12 @@ _Last verified: 2026-08-02_
 
 npm workspaces monorepo, `@edt/*` scope.
 
-| Workspace          | Package       | State                                                  |
-| ------------------ | ------------- | ------------------------------------------------------ |
-| `packages/shared`  | `@edt/shared` | Done — types, Zod schemas, constants, utils. Builds.   |
-| `apps/api`         | `@edt/api`    | Substantially complete (131 files). Builds, lints, typechecks. |
-| `apps/web`         | `@edt/web`    | Config + data providers only. No UI yet.               |
-| `scripts`          | —             | Two gazetteer index builders.                          |
+| Workspace         | Package       | State                                                          |
+| ----------------- | ------------- | -------------------------------------------------------------- |
+| `packages/shared` | `@edt/shared` | Done — types, Zod schemas, constants, utils. Builds.           |
+| `apps/api`        | `@edt/api`    | Substantially complete (131 files). Builds, lints, typechecks. |
+| `apps/web`        | `@edt/web`    | Config + data providers only. No UI yet.                       |
+| `scripts`         | —             | Two gazetteer index builders.                                  |
 
 ## Verified commands
 

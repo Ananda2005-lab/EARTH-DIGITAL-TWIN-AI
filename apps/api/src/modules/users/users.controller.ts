@@ -1,11 +1,33 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { HistoryEntry, PaginatedResult, UserProfile } from '@edt/shared';
 import { ApiPaginatedResponse } from 'src/common/decorators/api-paginated-response.decorator';
 import { Audit } from 'src/common/decorators/audit.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/common/types/authenticated-user';
-import { ClearHistoryDto, HistoryQueryDto, RecordHistoryDto, UpdateProfileDto } from './dto/users.dto';
+import {
+  ClearHistoryDto,
+  HistoryQueryDto,
+  RecordHistoryDto,
+  UpdateProfileDto,
+} from './dto/users.dto';
 import { UsersService } from './users.service';
 
 @ApiTags('users')
@@ -47,7 +69,10 @@ export class UsersController {
 
   @Post('me/history')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Record an activity entry', description: 'Used by the client to log searches and visits.' })
+  @ApiOperation({
+    summary: 'Record an activity entry',
+    description: 'Used by the client to log searches and visits.',
+  })
   @ApiBody({ schema: RecordHistoryDto.openApiSchema })
   @ApiResponse({ status: 201, description: 'Entry recorded' })
   async recordHistory(
@@ -60,7 +85,10 @@ export class UsersController {
 
   @Delete('me/history')
   @Audit({ action: 'user.history_clear', resource: 'history_entry' })
-  @ApiOperation({ summary: 'Clear your history', description: 'Optionally scoped to a single kind.' })
+  @ApiOperation({
+    summary: 'Clear your history',
+    description: 'Optionally scoped to a single kind.',
+  })
   @ApiOkResponse({ description: 'Number of removed entries' })
   async clearHistory(
     @CurrentUser() user: AuthenticatedUser,
@@ -74,7 +102,8 @@ export class UsersController {
   @Audit({ action: 'user.account_close', resource: 'user' })
   @ApiOperation({
     summary: 'Close your account',
-    description: 'Anonymises the profile, destroys credentials and revokes every session. Irreversible.',
+    description:
+      'Anonymises the profile, destroys credentials and revokes every session. Irreversible.',
   })
   @ApiResponse({ status: 204, description: 'Account closed' })
   @ApiResponse({ status: 403, description: 'Owner accounts cannot be closed' })

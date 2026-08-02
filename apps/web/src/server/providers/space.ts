@@ -49,7 +49,9 @@ export async function getIssState(): Promise<IssState | null> {
 }
 
 /** Predicted ISS ground track for the next `minutes`, sampled every 30 s. */
-export async function getIssTrack(minutes = 90): Promise<{ position: LngLat; timestamp: string }[]> {
+export async function getIssTrack(
+  minutes = 90,
+): Promise<{ position: LngLat; timestamp: string }[]> {
   const key = cacheKey('iss:track', { minutes, bucket: Math.floor(Date.now() / 60_000) });
   return cached(key, 60, async () => {
     const now = Math.floor(Date.now() / 1000);
@@ -72,12 +74,19 @@ export async function getIssTrack(minutes = 90): Promise<{ position: LngLat; tim
 
 export interface SpaceWeather {
   kpIndex: number;
-  kpBand: 'quiet' | 'unsettled' | 'active' | 'minor_storm' | 'moderate_storm' | 'strong_storm' | 'severe_storm';
+  kpBand:
+    | 'quiet'
+    | 'unsettled'
+    | 'active'
+    | 'minor_storm'
+    | 'moderate_storm'
+    | 'strong_storm'
+    | 'severe_storm';
   auroraVisibleAboveLat: number;
   solarWindSpeed: number | null;
   solarWindDensity: number | null;
   bz: number | null;
-  radioFlux: number | null
+  radioFlux: number | null;
   sunspotNumber: number | null;
   observedAt: string;
   series: { time: string; kp: number }[];
@@ -109,16 +118,22 @@ export async function getSpaceWeather(): Promise<SpaceWeather> {
         'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',
         { provider: 'NOAA SWPC', revalidate: 900, retries: 1 },
       ).catch(() => [] as [string, string, string, string][]),
-      fetchUpstream<string[][]>('https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json', {
-        provider: 'NOAA SWPC',
-        revalidate: 900,
-        retries: 1,
-      }).catch(() => [] as string[][]),
-      fetchUpstream<string[][]>('https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json', {
-        provider: 'NOAA SWPC',
-        revalidate: 900,
-        retries: 1,
-      }).catch(() => [] as string[][]),
+      fetchUpstream<string[][]>(
+        'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json',
+        {
+          provider: 'NOAA SWPC',
+          revalidate: 900,
+          retries: 1,
+        },
+      ).catch(() => [] as string[][]),
+      fetchUpstream<string[][]>(
+        'https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json',
+        {
+          provider: 'NOAA SWPC',
+          revalidate: 900,
+          retries: 1,
+        },
+      ).catch(() => [] as string[][]),
       fetchUpstream<{ flux: number; ssn: number; time_tag: string }[]>(
         'https://services.swpc.noaa.gov/json/f107_cm_flux.json',
         { provider: 'NOAA SWPC', revalidate: 3600, retries: 1 },
@@ -175,7 +190,11 @@ export async function getSatelliteGroups(): Promise<SatelliteGroup[]> {
       { id: 'galileo', label: 'Galileo', description: 'EU navigation constellation' },
       { id: 'weather', label: 'Weather', description: 'Polar-orbiting meteorological satellites' },
       { id: 'geo', label: 'Geostationary', description: 'GEO communications and imaging' },
-      { id: 'resource', label: 'Earth resources', description: 'Landsat, Sentinel and imaging platforms' },
+      {
+        id: 'resource',
+        label: 'Earth resources',
+        description: 'Landsat, Sentinel and imaging platforms',
+      },
     ];
     const counts = await Promise.all(
       groups.map(async (group) => {
@@ -196,7 +215,10 @@ export async function getSatelliteGroups(): Promise<SatelliteGroup[]> {
 }
 
 /** Raw TLE set for a CelesTrak group, parsed into name + two element lines. */
-export async function getTleSet(group: string, limit = 120): Promise<{ name: string; line1: string; line2: string }[]> {
+export async function getTleSet(
+  group: string,
+  limit = 120,
+): Promise<{ name: string; line1: string; line2: string }[]> {
   const key = cacheKey('celestrak:tle', { group, limit });
   return cached(key, 10_800, async () => {
     try {
@@ -213,7 +235,8 @@ export async function getTleSet(group: string, limit = 120): Promise<{ name: str
         const name = lines[i];
         const line1 = lines[i + 1];
         const line2 = lines[i + 2];
-        if (!name || !line1 || !line2 || !line1.startsWith('1 ') || !line2.startsWith('2 ')) continue;
+        if (!name || !line1 || !line2 || !line1.startsWith('1 ') || !line2.startsWith('2 '))
+          continue;
         out.push({ name: name.trim(), line1, line2 });
       }
       return out;

@@ -1,6 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { bboxContains, type BBox, type FlightFeed, type FlightPhase, type FlightState } from '@edt/shared';
+import {
+  bboxContains,
+  type BBox,
+  type FlightFeed,
+  type FlightPhase,
+  type FlightState,
+} from '@edt/shared';
 import type { AppConfig } from 'src/config/configuration';
 import { UPSTREAM_URLS } from 'src/infra/upstream/providers';
 import { UpstreamService } from 'src/infra/upstream/upstream.service';
@@ -92,7 +98,8 @@ export class FlightsService {
       .filter((flight) => {
         if (query.bbox && !bboxContains(query.bbox, flight.position)) return false;
         if (query.onGround !== undefined && flight.onGround !== query.onGround) return false;
-        if (query.minAltitude !== undefined && (flight.altitude ?? 0) < query.minAltitude) return false;
+        if (query.minAltitude !== undefined && (flight.altitude ?? 0) < query.minAltitude)
+          return false;
         if (callsign && !(flight.callsign ?? '').toUpperCase().startsWith(callsign)) return false;
         return true;
       })
@@ -109,20 +116,41 @@ export class FlightsService {
 
   async byIcao24(icao24: string): Promise<FlightState | null> {
     const feed = await this.feed({ limit: 4000 });
-    return feed.flights.find((flight) => flight.icao24.toLowerCase() === icao24.toLowerCase()) ?? null;
+    return (
+      feed.flights.find((flight) => flight.icao24.toLowerCase() === icao24.toLowerCase()) ?? null
+    );
   }
 
   /** Airports from the gazetteer, optionally filtered by country or bbox. */
-  async airports(options: { countryCode?: string; bbox?: BBox; limit: number }): Promise<
-    { icao: string; iata: string | null; name: string; city: string | null; countryCode: string; lng: number; lat: number; passengers: number | null }[]
+  async airports(options: {
+    countryCode?: string;
+    bbox?: BBox;
+    limit: number;
+  }): Promise<
+    {
+      icao: string;
+      iata: string | null;
+      name: string;
+      city: string | null;
+      countryCode: string;
+      lng: number;
+      lat: number;
+      passengers: number | null;
+    }[]
   > {
     const rows = await this.prisma.airport.findMany({
       where: {
         countryCode: options.countryCode?.toUpperCase(),
         ...(options.bbox
           ? {
-              lng: { gte: Math.min(options.bbox[0], options.bbox[2]), lte: Math.max(options.bbox[0], options.bbox[2]) },
-              lat: { gte: Math.min(options.bbox[1], options.bbox[3]), lte: Math.max(options.bbox[1], options.bbox[3]) },
+              lng: {
+                gte: Math.min(options.bbox[0], options.bbox[2]),
+                lte: Math.max(options.bbox[0], options.bbox[2]),
+              },
+              lat: {
+                gte: Math.min(options.bbox[1], options.bbox[3]),
+                lte: Math.max(options.bbox[1], options.bbox[3]),
+              },
             }
           : {}),
       },
@@ -170,15 +198,33 @@ export class FlightsService {
       };
       return { authorization: `Bearer ${this.token.accessToken}` };
     } catch (error) {
-      this.logger.warn(`OpenSky token exchange failed, falling back to anonymous access: ${(error as Error).message}`);
+      this.logger.warn(
+        `OpenSky token exchange failed, falling back to anonymous access: ${(error as Error).message}`,
+      );
       return undefined;
     }
   }
 }
 
 function mapState(state: OpenSkyState): FlightState | null {
-  const [icao24, callsign, originCountry, , lastContact, longitude, latitude, baroAltitude, onGround, velocity, trueTrack, verticalRate, , geoAltitude, squawk, spi] =
-    state;
+  const [
+    icao24,
+    callsign,
+    originCountry,
+    ,
+    lastContact,
+    longitude,
+    latitude,
+    baroAltitude,
+    onGround,
+    velocity,
+    trueTrack,
+    verticalRate,
+    ,
+    geoAltitude,
+    squawk,
+    spi,
+  ] = state;
   if (longitude === null || latitude === null) return null;
 
   return {

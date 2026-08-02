@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { Continent as PrismaContinent, Country, CountryIndicator, Prisma } from '@prisma/client';
+import type {
+  Continent as PrismaContinent,
+  Country,
+  CountryIndicator,
+  Prisma,
+} from '@prisma/client';
 import type {
   Continent,
   CountryDetail,
@@ -14,7 +19,11 @@ import { Paginated, resolveSort } from 'src/common/pagination';
 import { PrismaService } from 'src/infra/prisma/prisma.service';
 import { UPSTREAM_URLS } from 'src/infra/upstream/providers';
 import { UpstreamService } from 'src/infra/upstream/upstream.service';
-import { COUNTRY_DETAIL_INDICATORS, findIndicator, type CountryDetailIndicatorField } from '../analytics/indicators';
+import {
+  COUNTRY_DETAIL_INDICATORS,
+  findIndicator,
+  type CountryDetailIndicatorField,
+} from '../analytics/indicators';
 
 export interface CountryListQuery {
   page: number;
@@ -29,7 +38,15 @@ export interface CountryListQuery {
 
 type WorldBankResponse = [
   { page: number; pages: number; total: number } | null,
-  { indicator: { id: string; value: string }; countryiso3code: string; date: string; value: number | null }[] | null,
+  (
+    | {
+        indicator: { id: string; value: string };
+        countryiso3code: string;
+        date: string;
+        value: number | null;
+      }[]
+    | null
+  ),
 ];
 
 const SORTABLE = ['name', 'population', 'areaKm2', 'createdAt'] as const;
@@ -70,7 +87,12 @@ export class CountriesService {
     const sort = resolveSort(SORTABLE, 'population', query.sortBy, query.sortDir);
     const { skip, take } = Paginated.skipTake(query);
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.country.findMany({ where, orderBy: { [sort.field]: sort.direction }, skip, take }),
+      this.prisma.country.findMany({
+        where,
+        orderBy: { [sort.field]: sort.direction },
+        skip,
+        take,
+      }),
       this.prisma.country.count({ where }),
     ]);
 
@@ -122,7 +144,10 @@ export class CountriesService {
     return rows.map(toCountrySummary);
   }
 
-  async cities(code: string, limit: number): Promise<{ id: string; name: string; population: number; isCapital: boolean }[]> {
+  async cities(
+    code: string,
+    limit: number,
+  ): Promise<{ id: string; name: string; population: number; isCapital: boolean }[]> {
     return this.prisma.city.findMany({
       where: { countryCode: code.toUpperCase() },
       orderBy: [{ isCapital: 'desc' }, { population: 'desc' }],
@@ -149,7 +174,13 @@ export class CountriesService {
     });
 
     if (rows.length === 0) {
-      await this.fetchIndicator(country.id, country.code3, definition.code, definition.label, definition.unit);
+      await this.fetchIndicator(
+        country.id,
+        country.code3,
+        definition.code,
+        definition.label,
+        definition.unit,
+      );
       rows = await this.prisma.countryIndicator.findMany({
         where: { countryId: country.id, indicator: definition.code },
         orderBy: { year: 'asc' },
@@ -206,8 +237,14 @@ export class CountriesService {
     );
 
     const observations = (result.data[1] ?? []).filter(
-      (entry): entry is { indicator: { id: string; value: string }; countryiso3code: string; date: string; value: number } =>
-        entry.value !== null && Number.isFinite(entry.value),
+      (
+        entry,
+      ): entry is {
+        indicator: { id: string; value: string };
+        countryiso3code: string;
+        date: string;
+        value: number;
+      } => entry.value !== null && Number.isFinite(entry.value),
     );
     if (observations.length === 0) return 0;
 
@@ -251,7 +288,10 @@ export function toCountrySummary(country: Country): CountrySummary {
         ? { lng: country.capitalLng, lat: country.capitalLat }
         : { lng: country.lng, lat: country.lat },
     bbox:
-      country.bboxWest !== null && country.bboxSouth !== null && country.bboxEast !== null && country.bboxNorth !== null
+      country.bboxWest !== null &&
+      country.bboxSouth !== null &&
+      country.bboxEast !== null &&
+      country.bboxNorth !== null
         ? [country.bboxWest, country.bboxSouth, country.bboxEast, country.bboxNorth]
         : undefined,
   };
@@ -260,7 +300,8 @@ export function toCountrySummary(country: Country): CountrySummary {
 export function toCountryDetail(country: Country, indicators: CountryIndicator[]): CountryDetail {
   const latest = new Map<CountryDetailIndicatorField, number>();
   for (const row of indicators) {
-    const field = COUNTRY_DETAIL_INDICATORS[row.indicator as keyof typeof COUNTRY_DETAIL_INDICATORS];
+    const field =
+      COUNTRY_DETAIL_INDICATORS[row.indicator as keyof typeof COUNTRY_DETAIL_INDICATORS];
     if (field && !latest.has(field)) latest.set(field, row.value);
   }
   const value = (field: CountryDetailIndicatorField): number | null => latest.get(field) ?? null;

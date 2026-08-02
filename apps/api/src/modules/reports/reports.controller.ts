@@ -1,5 +1,25 @@
-import { Body, Controller, Delete, Get, Header, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiProduces, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Header,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiProduces,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   createReportSchema,
   idSchema,
@@ -42,17 +62,24 @@ export class ReportsController {
   @Audit({ action: 'report.create', resource: 'report' })
   @ApiOperation({
     summary: 'Request a report',
-    description: 'Returns immediately with status `queued`; generation happens in the background queue.',
+    description:
+      'Returns immediately with status `queued`; generation happens in the background queue.',
   })
   @ApiBody({ schema: CreateReportDto.openApiSchema })
   @ApiResponse({ status: 202, description: 'Report queued' })
   @ApiResponse({ status: 422, description: 'No usable target supplied' })
-  async create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateReportDto): Promise<Report> {
+  async create(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CreateReportDto,
+  ): Promise<Report> {
     return this.reports.create(user.id, dto);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a report', description: 'Poll this while status is queued or generating.' })
+  @ApiOperation({
+    summary: 'Get a report',
+    description: 'Poll this while status is queued or generating.',
+  })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ description: 'Report' })
   @ApiResponse({ status: 404, description: 'Not found' })
@@ -79,7 +106,10 @@ export class ReportsController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ description: 'Markdown document' })
   @ApiResponse({ status: 409, description: 'Report not ready' })
-  async exportMarkdown(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<string> {
+  async exportMarkdown(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ): Promise<string> {
     const exported = await this.reports.exportMarkdown(user.id, this.uuid(id));
     return exported.body;
   }

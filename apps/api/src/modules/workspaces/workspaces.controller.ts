@@ -1,5 +1,25 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { z } from 'zod';
 import {
   annotationSchema,
@@ -66,13 +86,19 @@ export class WorkspacesController {
   @ApiBody({ schema: CreateWorkspaceDto.openApiSchema })
   @ApiResponse({ status: 201, description: 'Workspace created' })
   @ApiResponse({ status: 422, description: 'Unknown layer id or invalid view state' })
-  async create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateWorkspaceDto): Promise<Workspace> {
+  async create(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CreateWorkspaceDto,
+  ): Promise<Workspace> {
     return this.workspaces.create(user.id, dto);
   }
 
   @Get('shared/:slug')
   @Public()
-  @ApiOperation({ summary: 'Open a shared workspace by slug', description: 'Works without authentication for public scenes.' })
+  @ApiOperation({
+    summary: 'Open a shared workspace by slug',
+    description: 'Works without authentication for public scenes.',
+  })
   @ApiParam({ name: 'slug' })
   @ApiOkResponse({ description: 'Workspace' })
   @ApiResponse({ status: 404, description: 'Unknown or private workspace' })
@@ -156,7 +182,10 @@ export class WorkspacesController {
   @Post(':id/members')
   @RequirePermission('workspace:share')
   @Audit({ action: 'workspace.member_add', resource: 'workspace', idParam: 'id' })
-  @ApiOperation({ summary: 'Invite a member', description: 'Owner only; requires the workspace:share capability.' })
+  @ApiOperation({
+    summary: 'Invite a member',
+    description: 'Owner only; requires the workspace:share capability.',
+  })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiBody({ schema: AddMemberDto.openApiSchema })
   @ApiOkResponse({ description: 'Updated member list' })
@@ -182,7 +211,11 @@ export class WorkspacesController {
     @Param('id') id: string,
     @Param('userId') memberUserId: string,
   ): Promise<void> {
-    await this.workspaces.removeMember(user.id, assertUuid(id, 'Workspace id'), assertUuid(memberUserId, 'User id'));
+    await this.workspaces.removeMember(
+      user.id,
+      assertUuid(id, 'Workspace id'),
+      assertUuid(memberUserId, 'User id'),
+    );
   }
 
   @Post(':id/share')

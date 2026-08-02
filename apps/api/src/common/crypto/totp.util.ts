@@ -58,7 +58,8 @@ export function verifyTotp(
   atMs = Date.now(),
 ): TotpVerification {
   const normalised = code.replace(/\s+/gu, '');
-  if (!new RegExp(`^\\d{${options.digits}}$`, 'u').test(normalised)) return { valid: false, counter: null };
+  if (!new RegExp(`^\\d{${options.digits}}$`, 'u').test(normalised))
+    return { valid: false, counter: null };
 
   const secret = base32Decode(base32Secret);
   const current = totpCounter(atMs, options.period);

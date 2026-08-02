@@ -1,5 +1,10 @@
 import type { OAuthAccount, User, UserPreference } from '@prisma/client';
-import { DEFAULT_PREFERENCES, type AuthProvider, type UserPreferences, type UserProfile } from '@edt/shared';
+import {
+  DEFAULT_PREFERENCES,
+  type AuthProvider,
+  type UserPreferences,
+  type UserProfile,
+} from '@edt/shared';
 
 export type UserWithRelations = User & {
   oauthAccounts?: Pick<OAuthAccount, 'provider'>[];
@@ -10,7 +15,8 @@ export function toUserProfile(user: UserWithRelations): UserProfile {
   const providers: AuthProvider[] = [];
   if (user.passwordHash) providers.push('password');
   for (const account of user.oauthAccounts ?? []) {
-    if (account.provider === 'google' || account.provider === 'github') providers.push(account.provider);
+    if (account.provider === 'google' || account.provider === 'github')
+      providers.push(account.provider);
   }
 
   return {

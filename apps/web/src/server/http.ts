@@ -119,7 +119,10 @@ export async function fetchUpstream<T>(url: string, options: FetchOptions): Prom
 
 /** Fetch CSV text (FIRMS, CelesTrak and other legacy feeds). */
 export async function fetchText(url: string, options: FetchOptions): Promise<string> {
-  return fetchUpstream<string>(url, { ...options, headers: { accept: 'text/plain', ...options.headers } });
+  return fetchUpstream<string>(url, {
+    ...options,
+    headers: { accept: 'text/plain', ...options.headers },
+  });
 }
 
 async function backoff(attempt: number): Promise<void> {
@@ -129,7 +132,10 @@ async function backoff(attempt: number): Promise<void> {
 }
 
 /** Build a URL with only the defined query parameters. */
-export function buildUrl(base: string, params: Record<string, string | number | boolean | undefined | null>): string {
+export function buildUrl(
+  base: string,
+  params: Record<string, string | number | boolean | undefined | null>,
+): string {
   const url = new URL(base);
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === null || value === '') continue;

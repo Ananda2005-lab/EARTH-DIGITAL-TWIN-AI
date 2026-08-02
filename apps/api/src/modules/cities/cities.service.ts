@@ -77,12 +77,19 @@ export class CitiesService {
   }
 
   /** Nearest cities to a coordinate, using the great-circle SQL helper. */
-  async nearest(point: LngLat, limit: number): Promise<{ id: string; name: string; countryCode: string; distanceKm: number }[]> {
+  async nearest(
+    point: LngLat,
+    limit: number,
+  ): Promise<{ id: string; name: string; countryCode: string; distanceKm: number }[]> {
     const rows = await this.prisma.nearestCities(point.lng, point.lat, limit);
     return rows.map((row) => ({ ...row, distanceKm: Number(row.distanceKm.toFixed(1)) }));
   }
 
-  async metrics(id: string): Promise<{ metric: string; label: string; unit: string; period: string; value: number; source: string }[]> {
+  async metrics(
+    id: string,
+  ): Promise<
+    { metric: string; label: string; unit: string; period: string; value: number; source: string }[]
+  > {
     const exists = await this.prisma.city.findUnique({ where: { id }, select: { id: true } });
     if (!exists) throw AppException.notFound('City not found');
     const rows = await this.prisma.cityMetric.findMany({
@@ -123,7 +130,9 @@ export function toCityDetail(city: City, countryName: string): CityDetail {
     areaKm2: city.areaKm2,
     populationDensity:
       city.populationDensity ??
-      (city.areaKm2 && city.areaKm2 > 0 ? Number((city.population / city.areaKm2).toFixed(1)) : null),
+      (city.areaKm2 && city.areaKm2 > 0
+        ? Number((city.population / city.areaKm2).toFixed(1))
+        : null),
     foundedYear: city.foundedYear,
     gdpUsd: city.gdpUsd === null ? null : Number(city.gdpUsd),
     costOfLivingIndex: city.costOfLivingIndex,

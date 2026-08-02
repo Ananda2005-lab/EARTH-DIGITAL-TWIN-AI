@@ -45,7 +45,10 @@ export class SearchController {
 
   @Get('suggest')
   @CacheTtl(300)
-  @ApiOperation({ summary: 'Type-ahead suggestions', description: 'Local data only, for keystroke-latency responses.' })
+  @ApiOperation({
+    summary: 'Type-ahead suggestions',
+    description: 'Local data only, for keystroke-latency responses.',
+  })
   @ApiOkResponse({ description: 'Suggestions' })
   async suggest(@Query() query: SuggestQueryDto): Promise<Place[]> {
     return this.search.suggest(query.q, query.limit);

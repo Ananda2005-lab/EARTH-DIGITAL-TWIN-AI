@@ -20,7 +20,9 @@ export class UsageRollupProcessor extends WorkerHost {
   }
 
   async process(job: Job<UsageRollupJob>): Promise<{ bucket: string; requests: number }> {
-    const bucket = startOfHour(job.data.bucket ? new Date(job.data.bucket) : new Date(Date.now() - 3_600_000));
+    const bucket = startOfHour(
+      job.data.bucket ? new Date(job.data.bucket) : new Date(Date.now() - 3_600_000),
+    );
     const nextBucket = new Date(bucket.getTime() + 3_600_000);
     const window = { gte: bucket, lt: nextBucket };
 
@@ -39,7 +41,10 @@ export class UsageRollupProcessor extends WorkerHost {
     ]);
 
     const latencies = ai.map((entry) => entry.latencyMs).sort((a, b) => a - b);
-    const p95 = latencies.length === 0 ? 0 : (latencies[Math.min(latencies.length - 1, Math.floor(latencies.length * 0.95))] ?? 0);
+    const p95 =
+      latencies.length === 0
+        ? 0
+        : (latencies[Math.min(latencies.length - 1, Math.floor(latencies.length * 0.95))] ?? 0);
     const requests = audit + ai.length;
 
     await this.prisma.usageMetric.upsert({
@@ -62,7 +67,9 @@ export class UsageRollupProcessor extends WorkerHost {
       },
     });
 
-    this.logger.log(`Usage rollup ${bucket.toISOString()}: ${requests} requests, ${distinctUsers.length} users`);
+    this.logger.log(
+      `Usage rollup ${bucket.toISOString()}: ${requests} requests, ${distinctUsers.length} users`,
+    );
     return { bucket: bucket.toISOString(), requests };
   }
 }

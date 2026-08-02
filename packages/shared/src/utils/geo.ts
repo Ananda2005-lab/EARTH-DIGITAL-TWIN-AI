@@ -11,7 +11,7 @@ export function clamp(value: number, min: number, max: number): number {
 }
 
 export function normaliseLongitude(lng: number): number {
-  let x = ((lng + 180) % 360 + 360) % 360 - 180;
+  let x = ((((lng + 180) % 360) + 360) % 360) - 180;
   if (x === -180) x = 180;
   return x;
 }
@@ -26,8 +26,7 @@ export function haversineDistance(a: LngLat, b: LngLat): number {
   const dLng = toRadians(b.lng - a.lng);
   const lat1 = toRadians(a.lat);
   const lat2 = toRadians(b.lat);
-  const h =
-    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
@@ -47,7 +46,8 @@ export function destinationPoint(origin: LngLat, bearingDeg: number, distanceM: 
   const theta = toRadians(bearingDeg);
   const phi1 = toRadians(origin.lat);
   const lambda1 = toRadians(origin.lng);
-  const sinPhi2 = Math.sin(phi1) * Math.cos(delta) + Math.cos(phi1) * Math.sin(delta) * Math.cos(theta);
+  const sinPhi2 =
+    Math.sin(phi1) * Math.cos(delta) + Math.cos(phi1) * Math.sin(delta) * Math.cos(theta);
   const phi2 = Math.asin(clamp(sinPhi2, -1, 1));
   const lambda2 =
     lambda1 +
@@ -119,7 +119,8 @@ export function expandBBox(bbox: BBox, factor: number): BBox {
 /** Approximate bbox area in km². */
 export function bboxAreaKm2(bbox: BBox): number {
   const [w, s, e, n] = bbox;
-  const widthKm = (haversineDistance({ lng: w, lat: (s + n) / 2 }, { lng: e, lat: (s + n) / 2 }) / 1000);
+  const widthKm =
+    haversineDistance({ lng: w, lat: (s + n) / 2 }, { lng: e, lat: (s + n) / 2 }) / 1000;
   const heightKm = haversineDistance({ lng: w, lat: s }, { lng: w, lat: n }) / 1000;
   return widthKm * heightKm;
 }
@@ -136,7 +137,8 @@ export function zoomForBBox(bbox: BBox, viewportWidth = 1280, viewportHeight = 7
 
 /** Camera altitude (metres) roughly equivalent to a Mercator zoom level. */
 export function altitudeForZoom(zoom: number, latitude = 0): number {
-  const metresPerPixel = (EARTH_CIRCUMFERENCE_M * Math.cos(toRadians(latitude))) / (256 * 2 ** zoom);
+  const metresPerPixel =
+    (EARTH_CIRCUMFERENCE_M * Math.cos(toRadians(latitude))) / (256 * 2 ** zoom);
   return metresPerPixel * 1000;
 }
 

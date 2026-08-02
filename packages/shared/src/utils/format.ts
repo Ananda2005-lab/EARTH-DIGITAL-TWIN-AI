@@ -1,7 +1,10 @@
 import { AQI_BREAKPOINTS, BEAUFORT } from '../constants/scales';
 import type { Pollutant } from '../types/weather';
 
-const compactFormatter = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+const compactFormatter = new Intl.NumberFormat('en', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
 
 export function formatCompact(value: number | null | undefined): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return '—';
@@ -31,13 +34,19 @@ export function formatCurrency(value: number | null | undefined, currency = 'USD
   }).format(value);
 }
 
-export function formatTemperature(celsius: number | null | undefined, unit: 'celsius' | 'fahrenheit' = 'celsius'): string {
+export function formatTemperature(
+  celsius: number | null | undefined,
+  unit: 'celsius' | 'fahrenheit' = 'celsius',
+): string {
   if (celsius === null || celsius === undefined || !Number.isFinite(celsius)) return '—';
   const value = unit === 'fahrenheit' ? celsius * (9 / 5) + 32 : celsius;
   return `${Math.round(value)}°${unit === 'fahrenheit' ? 'F' : 'C'}`;
 }
 
-export function formatDistance(metres: number | null | undefined, units: 'metric' | 'imperial' = 'metric'): string {
+export function formatDistance(
+  metres: number | null | undefined,
+  units: 'metric' | 'imperial' = 'metric',
+): string {
   if (metres === null || metres === undefined || !Number.isFinite(metres)) return '—';
   if (units === 'imperial') {
     const feet = metres * 3.28084;
@@ -50,12 +59,18 @@ export function formatDistance(metres: number | null | undefined, units: 'metric
   return km < 10 ? `${km.toFixed(1)} km` : `${formatNumber(Math.round(km))} km`;
 }
 
-export function formatSpeed(kmh: number | null | undefined, units: 'metric' | 'imperial' = 'metric'): string {
+export function formatSpeed(
+  kmh: number | null | undefined,
+  units: 'metric' | 'imperial' = 'metric',
+): string {
   if (kmh === null || kmh === undefined || !Number.isFinite(kmh)) return '—';
   return units === 'imperial' ? `${Math.round(kmh * 0.621371)} mph` : `${Math.round(kmh)} km/h`;
 }
 
-export function formatArea(km2: number | null | undefined, units: 'metric' | 'imperial' = 'metric'): string {
+export function formatArea(
+  km2: number | null | undefined,
+  units: 'metric' | 'imperial' = 'metric',
+): string {
   if (km2 === null || km2 === undefined || !Number.isFinite(km2)) return '—';
   return units === 'imperial'
     ? `${formatCompact(km2 * 0.386102)} mi²`
@@ -83,7 +98,24 @@ export function formatDms(lng: number, lat: number): string {
 
 export function formatBearing(degrees: number | null | undefined): string {
   if (degrees === null || degrees === undefined || !Number.isFinite(degrees)) return '—';
-  const points = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+  const points = [
+    'N',
+    'NNE',
+    'NE',
+    'ENE',
+    'E',
+    'ESE',
+    'SE',
+    'SSE',
+    'S',
+    'SSW',
+    'SW',
+    'WSW',
+    'W',
+    'WNW',
+    'NW',
+    'NNW',
+  ];
   const index = Math.round((((degrees % 360) + 360) % 360) / 22.5) % 16;
   return `${points[index]} ${Math.round(degrees)}°`;
 }

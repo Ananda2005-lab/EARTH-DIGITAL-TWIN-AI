@@ -25,7 +25,9 @@ export class MailService {
   async send(message: MailMessage): Promise<boolean> {
     const mail = this.config.get('mail', { infer: true });
     if (!mail.enabled || !mail.host) {
-      this.logger.debug(`Mail suppressed (transport disabled): "${message.subject}" → ${message.to}`);
+      this.logger.debug(
+        `Mail suppressed (transport disabled): "${message.subject}" → ${message.to}`,
+      );
       return false;
     }
 

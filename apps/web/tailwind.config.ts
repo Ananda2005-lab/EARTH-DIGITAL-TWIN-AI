@@ -100,8 +100,10 @@ const config: Config = {
         '2xs': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.02em' }],
       },
       boxShadow: {
-        glass: '0 1px 0 0 hsl(var(--glass-highlight) / 0.08) inset, 0 24px 60px -24px rgb(2 6 23 / 0.65)',
-        'glass-sm': '0 1px 0 0 hsl(var(--glass-highlight) / 0.06) inset, 0 12px 32px -16px rgb(2 6 23 / 0.5)',
+        glass:
+          '0 1px 0 0 hsl(var(--glass-highlight) / 0.08) inset, 0 24px 60px -24px rgb(2 6 23 / 0.65)',
+        'glass-sm':
+          '0 1px 0 0 hsl(var(--glass-highlight) / 0.06) inset, 0 12px 32px -16px rgb(2 6 23 / 0.5)',
         glow: '0 0 0 1px hsl(var(--primary) / 0.25), 0 0 32px -4px hsl(var(--primary) / 0.35)',
         'glow-lg': '0 0 0 1px hsl(var(--primary) / 0.3), 0 0 64px -8px hsl(var(--primary) / 0.5)',
         elevated: '0 32px 80px -32px rgb(2 6 23 / 0.8)',
@@ -111,7 +113,8 @@ const config: Config = {
           'linear-gradient(to bottom, hsl(var(--background) / 0) 0%, hsl(var(--background)) 85%)',
         'aurora-gradient':
           'radial-gradient(at 18% 12%, hsl(190 92% 52% / 0.28) 0px, transparent 55%), radial-gradient(at 82% 8%, hsl(258 92% 66% / 0.26) 0px, transparent 52%), radial-gradient(at 62% 88%, hsl(292 86% 62% / 0.2) 0px, transparent 50%)',
-        'sheen': 'linear-gradient(115deg, transparent 20%, hsl(var(--glass-highlight) / 0.18) 45%, transparent 70%)',
+        sheen:
+          'linear-gradient(115deg, transparent 20%, hsl(var(--glass-highlight) / 0.18) 45%, transparent 70%)',
       },
       keyframes: {
         'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },

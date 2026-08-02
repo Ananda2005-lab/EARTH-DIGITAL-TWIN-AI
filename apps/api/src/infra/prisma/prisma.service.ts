@@ -92,7 +92,18 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   async searchGazetteer(
     query: string,
     limit: number,
-  ): Promise<{ kind: 'country' | 'city'; id: string; name: string; countryCode: string; lng: number; lat: number; population: number; score: number }[]> {
+  ): Promise<
+    {
+      kind: 'country' | 'city';
+      id: string;
+      name: string;
+      countryCode: string;
+      lng: number;
+      lat: number;
+      population: number;
+      score: number;
+    }[]
+  > {
     return this.$queryRaw<
       {
         kind: 'country' | 'city';
@@ -143,7 +154,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   /** Purge expired auth artefacts; called by the scheduled maintenance job. */
-  async pruneExpiredTokens(now = new Date()): Promise<{ refreshTokens: number; resets: number; verifications: number }> {
+  async pruneExpiredTokens(
+    now = new Date(),
+  ): Promise<{ refreshTokens: number; resets: number; verifications: number }> {
     const [refreshTokens, resets, verifications] = await this.$transaction([
       this.refreshToken.deleteMany({ where: { expiresAt: { lt: now } } }),
       this.passwordResetToken.deleteMany({ where: { expiresAt: { lt: now } } }),

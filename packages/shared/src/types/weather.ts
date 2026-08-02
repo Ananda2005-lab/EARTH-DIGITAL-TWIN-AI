@@ -97,7 +97,13 @@ export interface WeatherBundle {
   fetchedAt: string;
 }
 
-export type AqiBand = 'good' | 'moderate' | 'unhealthy_sensitive' | 'unhealthy' | 'very_unhealthy' | 'hazardous';
+export type AqiBand =
+  | 'good'
+  | 'moderate'
+  | 'unhealthy_sensitive'
+  | 'unhealthy'
+  | 'very_unhealthy'
+  | 'hazardous';
 
 export interface AirQualityNow {
   aqi: number;

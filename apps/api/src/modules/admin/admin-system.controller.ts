@@ -1,5 +1,13 @@
 import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { idSchema, type ApiKeyRecord } from '@edt/shared';
 import { Audit } from 'src/common/decorators/audit.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
@@ -13,7 +21,12 @@ import { PROVIDER_KEYS, type ProviderKey } from 'src/infra/upstream/providers';
 import { ApiKeysService } from './api-keys.service';
 import { FeatureFlagsService } from './feature-flags.service';
 import { SystemService, type MaintenanceState, type SystemStatus } from './system.service';
-import { CreateApiKeyDto, InvalidateCacheDto, ListApiKeysDto, MaintenanceDto } from './dto/admin.dto';
+import {
+  CreateApiKeyDto,
+  InvalidateCacheDto,
+  ListApiKeysDto,
+  MaintenanceDto,
+} from './dto/admin.dto';
 
 /**
  * Owner-only operations: credentials, caches, circuit breakers and maintenance
@@ -36,7 +49,8 @@ export class AdminSystemController {
   @RequirePermission('admin:system')
   @ApiOperation({
     summary: 'System status',
-    description: 'Database and Redis probes, upstream circuit states, PostGIS availability and memory use.',
+    description:
+      'Database and Redis probes, upstream circuit states, PostGIS availability and memory use.',
   })
   @ApiOkResponse({ description: 'System status' })
   async status(): Promise<SystemStatus> {
@@ -48,7 +62,8 @@ export class AdminSystemController {
   @Audit({ action: 'admin.maintenance_toggle', resource: 'system' })
   @ApiOperation({
     summary: 'Toggle maintenance mode',
-    description: 'While enabled, non-admin write requests are rejected with 503 across every instance.',
+    description:
+      'While enabled, non-admin write requests are rejected with 503 across every instance.',
   })
   @ApiBody({ schema: MaintenanceDto.openApiSchema })
   @ApiOkResponse({ description: 'Maintenance state' })
@@ -79,7 +94,10 @@ export class AdminSystemController {
   @Post('circuits/reset')
   @RequirePermission('admin:system')
   @Audit({ action: 'admin.circuit_reset', resource: 'system' })
-  @ApiOperation({ summary: 'Close upstream circuit breakers', description: 'Omit `provider` to reset all of them.' })
+  @ApiOperation({
+    summary: 'Close upstream circuit breakers',
+    description: 'Omit `provider` to reset all of them.',
+  })
   @ApiOkResponse({ description: 'Reset providers' })
   resetCircuits(@Query('provider') provider?: string): { reset: string[] } {
     if (provider && !(PROVIDER_KEYS as string[]).includes(provider)) {
@@ -90,7 +108,10 @@ export class AdminSystemController {
 
   @Get('api-keys')
   @RequirePermission('admin:keys')
-  @ApiOperation({ summary: 'List API keys', description: 'Only the last characters of each secret are ever returned.' })
+  @ApiOperation({
+    summary: 'List API keys',
+    description: 'Only the last characters of each secret are ever returned.',
+  })
   @ApiOkResponse({ description: 'API keys' })
   async listKeys(@Query() query: ListApiKeysDto): Promise<ApiKeyRecord[]> {
     return this.apiKeys.list(query.includeRevoked);
@@ -120,7 +141,10 @@ export class AdminSystemController {
   @Post('api-keys/:id/rotate')
   @RequirePermission('admin:keys')
   @Audit({ action: 'admin.api_key_rotate', resource: 'api_key', idParam: 'id' })
-  @ApiOperation({ summary: 'Rotate an API key', description: 'Revokes the old secret and issues a replacement.' })
+  @ApiOperation({
+    summary: 'Rotate an API key',
+    description: 'Revokes the old secret and issues a replacement.',
+  })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ description: 'Replacement key with its one-time secret' })
   @ApiResponse({ status: 409, description: 'Key already revoked' })

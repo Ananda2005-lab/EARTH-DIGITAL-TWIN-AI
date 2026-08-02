@@ -34,13 +34,28 @@ function configureSwagger(app: INestApplication, config: ConfigService<AppConfig
         ].join('\n'),
       )
       .setVersion(PLATFORM.version)
-      .setContact('Earth Digital Twin AI', config.get('webAppUrl', { infer: true }), PLATFORM.supportEmail)
-      .addServer(`${config.get('publicApiUrl', { infer: true })}/${GLOBAL_PREFIX}`, 'Current environment')
+      .setContact(
+        'Earth Digital Twin AI',
+        config.get('webAppUrl', { infer: true }),
+        PLATFORM.supportEmail,
+      )
+      .addServer(
+        `${config.get('publicApiUrl', { infer: true })}/${GLOBAL_PREFIX}`,
+        'Current environment',
+      )
       .addBearerAuth(
-        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Access token from /auth/login' },
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Access token from /auth/login',
+        },
         'bearer',
       )
-      .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header', description: 'Machine credential' }, 'apiKey')
+      .addApiKey(
+        { type: 'apiKey', name: 'x-api-key', in: 'header', description: 'Machine credential' },
+        'apiKey',
+      )
       .addTag('auth', 'Registration, sessions, MFA and OAuth')
       .addTag('users', 'Profile and activity history')
       .addTag('preferences', 'Appearance, units and layer defaults')
@@ -63,13 +78,20 @@ function configureSwagger(app: INestApplication, config: ConfigService<AppConfig
       .addTag('admin-system', 'Owner-only operations')
       .addTag('health', 'Probes')
       .build(),
-    { operationIdFactory: (controllerKey, methodKey) => `${controllerKey.replace('Controller', '')}_${methodKey}` },
+    {
+      operationIdFactory: (controllerKey, methodKey) =>
+        `${controllerKey.replace('Controller', '')}_${methodKey}`,
+    },
   );
 
   SwaggerModule.setup('api/docs', app, document, {
     customSiteTitle: `${PLATFORM.name} API reference`,
     jsonDocumentUrl: 'api/docs/json',
-    swaggerOptions: { persistAuthorization: true, displayRequestDuration: true, tagsSorter: 'alpha' },
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      tagsSorter: 'alpha',
+    },
   });
 }
 
@@ -124,7 +146,11 @@ async function bootstrap(): Promise<void> {
   // The major version lives in the path prefix (`/api/v1`). Header versioning is
   // enabled on top of it so a future minor revision of a single endpoint can be
   // introduced with `x-api-version` without moving every other route.
-  app.enableVersioning({ type: VersioningType.HEADER, header: 'x-api-version', defaultVersion: '1' });
+  app.enableVersioning({
+    type: VersioningType.HEADER,
+    header: 'x-api-version',
+    defaultVersion: '1',
+  });
 
   configureSwagger(app, config);
 

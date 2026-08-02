@@ -129,13 +129,16 @@ export class WeatherService {
     const baselineYears = trend.filter((point_) => point_.year >= 1951 && point_.year <= 1980);
     const baseline =
       baselineYears.length > 0
-        ? baselineYears.reduce((total, entry) => total + entry.temperatureMean, 0) / baselineYears.length
+        ? baselineYears.reduce((total, entry) => total + entry.temperatureMean, 0) /
+          baselineYears.length
         : 0;
     const withAnomaly = trend.map((entry) => ({
       ...entry,
       anomaly: Number((entry.temperatureMean - baseline).toFixed(3)),
     }));
-    const slope = linearSlope(withAnomaly.map((entry) => ({ x: entry.year, y: entry.temperatureMean })));
+    const slope = linearSlope(
+      withAnomaly.map((entry) => ({ x: entry.year, y: entry.temperatureMean })),
+    );
     const koppen = classifyKoppen(normals, point.lat);
 
     return {
@@ -160,7 +163,8 @@ export class WeatherService {
         query: {
           latitude: round(point.lat, 2),
           longitude: round(point.lng, 2),
-          current: 'wave_height,wave_period,wave_direction,swell_wave_height,sea_surface_temperature',
+          current:
+            'wave_height,wave_period,wave_direction,swell_wave_height,sea_surface_temperature',
           hourly: 'wave_height,sea_surface_temperature',
           forecast_days: 5,
         },
@@ -171,7 +175,9 @@ export class WeatherService {
     if (!raw) return null;
 
     const current = raw.current ?? {};
-    const timeSeries = Array.isArray(raw.hourly?.time) ? raw.hourly.time.map((value) => String(value)) : [];
+    const timeSeries = Array.isArray(raw.hourly?.time)
+      ? raw.hourly.time.map((value) => String(value))
+      : [];
 
     return {
       location: point,

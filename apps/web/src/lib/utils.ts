@@ -68,7 +68,10 @@ export function damp(current: number, target: number, lambda: number, delta: num
   return lerp(current, target, 1 - Math.exp(-lambda * delta));
 }
 
-export function groupBy<T, K extends string | number>(items: T[], key: (item: T) => K): Record<K, T[]> {
+export function groupBy<T, K extends string | number>(
+  items: T[],
+  key: (item: T) => K,
+): Record<K, T[]> {
   return items.reduce(
     (acc, item) => {
       const k = key(item);
@@ -91,7 +94,9 @@ export function median(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2 : (sorted[mid] ?? 0);
+  return sorted.length % 2 === 0
+    ? ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2
+    : (sorted[mid] ?? 0);
 }
 
 export function percentile(values: number[], p: number): number {

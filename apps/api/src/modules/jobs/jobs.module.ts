@@ -31,6 +31,12 @@ import { QUEUE_NAMES } from './queues';
     NotificationsModule,
     WeatherModule,
   ],
-  providers: [ReportProcessor, HazardAlertProcessor, CacheWarmProcessor, UsageRollupProcessor, JobsScheduler],
+  providers: [
+    ReportProcessor,
+    HazardAlertProcessor,
+    CacheWarmProcessor,
+    UsageRollupProcessor,
+    JobsScheduler,
+  ],
 })
 export class JobsModule {}

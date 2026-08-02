@@ -47,7 +47,10 @@ export class CitiesController {
 
   @Get()
   @CacheTtl(3600)
-  @ApiOperation({ summary: 'List cities', description: 'Paginated urban gazetteer with search and population filters.' })
+  @ApiOperation({
+    summary: 'List cities',
+    description: 'Paginated urban gazetteer with search and population filters.',
+  })
   @ApiPaginatedResponse({ type: 'object' }, 'City summaries')
   @ApiResponse({ status: 422, description: 'Invalid filter' })
   async list(@Query() query: CityListDto): Promise<PaginatedResult<CitySummary>> {
@@ -84,7 +87,9 @@ export class CitiesController {
   @ApiResponse({ status: 404, description: 'Unknown city' })
   async metrics(
     @Param('id') id: string,
-  ): Promise<{ metric: string; label: string; unit: string; period: string; value: number; source: string }[]> {
+  ): Promise<
+    { metric: string; label: string; unit: string; period: string; value: number; source: string }[]
+  > {
     const parsed = idSchema.safeParse(id);
     if (!parsed.success) throw AppException.badRequest('City id must be a UUID');
     return this.cities.metrics(parsed.data);
@@ -92,13 +97,20 @@ export class CitiesController {
 
   @Get('by-slug/:countryCode/:slug')
   @CacheTtl(3600)
-  @ApiOperation({ summary: 'City detail by country and slug', description: 'Stable URLs for the web tier.' })
+  @ApiOperation({
+    summary: 'City detail by country and slug',
+    description: 'Stable URLs for the web tier.',
+  })
   @ApiParam({ name: 'countryCode', example: 'FR' })
   @ApiParam({ name: 'slug', example: 'paris' })
   @ApiOkResponse({ description: 'City detail' })
   @ApiResponse({ status: 404, description: 'Unknown city' })
-  async bySlug(@Param('countryCode') countryCode: string, @Param('slug') slug: string): Promise<CityDetail> {
-    if (!/^[A-Za-z]{2}$/u.test(countryCode)) throw AppException.badRequest('Expected an ISO 3166-1 alpha-2 code');
+  async bySlug(
+    @Param('countryCode') countryCode: string,
+    @Param('slug') slug: string,
+  ): Promise<CityDetail> {
+    if (!/^[A-Za-z]{2}$/u.test(countryCode))
+      throw AppException.badRequest('Expected an ISO 3166-1 alpha-2 code');
     return this.cities.bySlug(countryCode, slug);
   }
 }

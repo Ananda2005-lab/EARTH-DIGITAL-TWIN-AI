@@ -1,6 +1,26 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
 import { z } from 'zod';
 import {
@@ -57,7 +77,10 @@ export class AiController {
 
   @Post('compare')
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Compare countries or cities', description: 'Returns a narrative plus a dimension table.' })
+  @ApiOperation({
+    summary: 'Compare countries or cities',
+    description: 'Returns a narrative plus a dimension table.',
+  })
   @ApiBody({ schema: AiCompareDto.openApiSchema })
   @ApiOkResponse({ description: 'Comparison result' })
   @ApiResponse({ status: 503, description: 'AI service unavailable' })
@@ -70,14 +93,20 @@ export class AiController {
   }
 
   @Get('usage')
-  @ApiOperation({ summary: 'Your AI usage today', description: 'Tokens consumed against the daily budget.' })
+  @ApiOperation({
+    summary: 'Your AI usage today',
+    description: 'Tokens consumed against the daily budget.',
+  })
   @ApiOkResponse({ description: 'Usage summary' })
   async usage(@CurrentUser() user: AuthenticatedUser): Promise<AiUsageSummary> {
     return this.ai.usage(user.id);
   }
 
   @Get('conversations')
-  @ApiOperation({ summary: 'List your conversations', description: 'Pinned first, then most recently updated.' })
+  @ApiOperation({
+    summary: 'List your conversations',
+    description: 'Pinned first, then most recently updated.',
+  })
   @ApiPaginatedResponse({ type: 'object' }, 'Conversations')
   async conversations(
     @CurrentUser() user: AuthenticatedUser,
@@ -91,7 +120,10 @@ export class AiController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ description: 'Messages in chronological order' })
   @ApiResponse({ status: 404, description: 'Conversation not found' })
-  async messages(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<ChatMessage[]> {
+  async messages(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ): Promise<ChatMessage[]> {
     return this.ai.conversationMessages(user.id, this.uuid(id));
   }
 

@@ -1,6 +1,11 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { correlationQuerySchema, indicatorQuerySchema, rankingQuerySchema, type IndicatorSeries } from '@edt/shared';
+import {
+  correlationQuerySchema,
+  indicatorQuerySchema,
+  rankingQuerySchema,
+  type IndicatorSeries,
+} from '@edt/shared';
 import { Attribution } from 'src/common/decorators/attribution.decorator';
 import { CacheTtl } from 'src/common/decorators/cache-ttl.decorator';
 import { RequirePermission } from 'src/common/decorators/permissions.decorator';
@@ -27,7 +32,10 @@ export class AnalyticsController {
   @Get('indicators')
   @Public()
   @CacheTtl(86_400)
-  @ApiOperation({ summary: 'Indicator catalogue', description: 'The allow-listed indicators the API can serve.' })
+  @ApiOperation({
+    summary: 'Indicator catalogue',
+    description: 'The allow-listed indicators the API can serve.',
+  })
   @ApiOkResponse({ description: 'Indicator definitions' })
   catalogue(): readonly IndicatorDefinition[] {
     return this.analytics.catalogue();
@@ -38,11 +46,14 @@ export class AnalyticsController {
   @CacheTtl(86_400)
   @ApiOperation({
     summary: 'Indicator time series',
-    description: 'One series per country. Defaults to a representative comparison set when no countries are given.',
+    description:
+      'One series per country. Defaults to a representative comparison set when no countries are given.',
   })
   @ApiOkResponse({ description: 'Indicator series' })
   @ApiResponse({ status: 400, description: 'Unknown indicator code' })
-  async series(@Query() query: IndicatorQueryDto): Promise<(IndicatorSeries & { countryCode: string })[]> {
+  async series(
+    @Query() query: IndicatorQueryDto,
+  ): Promise<(IndicatorSeries & { countryCode: string })[]> {
     return this.analytics.series({
       indicator: query.indicator,
       countries: query.countries,
@@ -55,7 +66,10 @@ export class AnalyticsController {
   @Get('rankings')
   @Public()
   @CacheTtl(86_400)
-  @ApiOperation({ summary: 'Rank countries by an indicator', description: 'Uses the latest stored observation per country.' })
+  @ApiOperation({
+    summary: 'Rank countries by an indicator',
+    description: 'Uses the latest stored observation per country.',
+  })
   @ApiOkResponse({ description: 'Ranked countries' })
   @ApiResponse({ status: 400, description: 'Unknown indicator code' })
   async rankings(@Query() query: RankingQueryDto): Promise<RankingEntry[]> {
@@ -73,7 +87,8 @@ export class AnalyticsController {
   @CacheTtl(86_400)
   @ApiOperation({
     summary: 'Correlate two indicators',
-    description: 'Pearson coefficient plus the scatter points. Requires the analytics:export capability.',
+    description:
+      'Pearson coefficient plus the scatter points. Requires the analytics:export capability.',
   })
   @ApiOkResponse({ description: 'Correlation result' })
   @ApiResponse({ status: 403, description: 'Missing analytics:export permission' })
@@ -84,7 +99,10 @@ export class AnalyticsController {
   @Get('overview')
   @Public()
   @CacheTtl(3600)
-  @ApiOperation({ summary: 'Platform data coverage', description: 'Row counts and global aggregates for the dashboard.' })
+  @ApiOperation({
+    summary: 'Platform data coverage',
+    description: 'Row counts and global aggregates for the dashboard.',
+  })
   @ApiOkResponse({ description: 'Coverage overview' })
   async overview(): Promise<PlatformOverview> {
     return this.analytics.overview();

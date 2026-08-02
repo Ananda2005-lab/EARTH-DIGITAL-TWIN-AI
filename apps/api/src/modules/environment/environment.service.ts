@@ -22,7 +22,10 @@ export interface CountryEnvironmentProfile {
   year: number | null;
 }
 
-const ENVIRONMENT_INDICATORS: Record<string, keyof Omit<CountryEnvironmentProfile, 'countryCode' | 'name' | 'year'>> = {
+const ENVIRONMENT_INDICATORS: Record<
+  string,
+  keyof Omit<CountryEnvironmentProfile, 'countryCode' | 'name' | 'year'>
+> = {
   'EN.GHG.CO2.PC.CE.AR5': 'co2TonnesPerCapita',
   'EG.FEC.RNEW.ZS': 'renewableEnergyPct',
   'AG.LND.FRST.ZS': 'forestAreaPct',
@@ -100,7 +103,9 @@ export class EnvironmentService {
   }
 
   /** Cities with the worst stored air quality, for the environment dashboard. */
-  async worstAirQuality(limit: number): Promise<{ id: string; name: string; countryCode: string; averageAqi: number }[]> {
+  async worstAirQuality(
+    limit: number,
+  ): Promise<{ id: string; name: string; countryCode: string; averageAqi: number }[]> {
     const cities = await this.prisma.city.findMany({
       where: { averageAqi: { not: null } },
       orderBy: { averageAqi: 'desc' },

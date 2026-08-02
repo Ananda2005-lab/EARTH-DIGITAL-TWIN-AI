@@ -40,6 +40,9 @@ Thumbs.db
 .idea/
 *.swp
 
+# Scratch space for ad-hoc verification / one-off scripts
+/.scratch/
+
 # Caches
 .eslintcache
 .turbo/

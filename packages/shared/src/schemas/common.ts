@@ -20,7 +20,10 @@ export const bboxStringSchema = z
   .transform((value, ctx) => {
     const parts = value.split(',').map((v) => Number.parseFloat(v.trim()));
     if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'bbox must be "west,south,east,north"' });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'bbox must be "west,south,east,north"',
+      });
       return z.NEVER;
     }
     return parts as [number, number, number, number];
@@ -59,7 +62,14 @@ export const searchQuerySchema = z.object({
   kinds: z
     .string()
     .optional()
-    .transform((v) => (v ? v.split(',').map((s) => s.trim()).filter(Boolean) : undefined)),
+    .transform((v) =>
+      v
+        ? v
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : undefined,
+    ),
   near: z
     .string()
     .optional()

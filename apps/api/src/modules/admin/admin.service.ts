@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import type { Continent as PrismaContinent, Prisma, SubscriptionPlan, UserRole } from '@prisma/client';
+import type {
+  Continent as PrismaContinent,
+  Prisma,
+  SubscriptionPlan,
+  UserRole,
+} from '@prisma/client';
 import type { PaginatedResult, Report, UserProfile } from '@edt/shared';
 import { AppException } from 'src/common/errors/app-exception';
 import { Paginated, resolveSort } from 'src/common/pagination';
@@ -59,12 +64,25 @@ export interface AiLogEntry {
 }
 
 export interface AdminDashboard {
-  users: { total: number; active: number; suspended: number; unverified: number; newLast7Days: number };
+  users: {
+    total: number;
+    active: number;
+    suspended: number;
+    unverified: number;
+    newLast7Days: number;
+  };
   plans: { plan: SubscriptionPlan; count: number }[];
   content: { reports: number; workspaces: number; bookmarks: number; conversations: number };
   ai: { requests24h: number; tokens24h: number; failures24h: number; flagged: number };
   hazards: { cached: number; notified: number };
-  usage: { bucket: string; requests: number; errors: number; p95LatencyMs: number; aiTokens: number; uniqueUsers: number }[];
+  usage: {
+    bucket: string;
+    requests: number;
+    errors: number;
+    p95LatencyMs: number;
+    aiTokens: number;
+    uniqueUsers: number;
+  }[];
 }
 
 export interface CountryPatch {
@@ -104,7 +122,9 @@ export class AdminService {
     private readonly tokens: TokenService,
   ) {}
 
-  async listUsers(query: AdminUserQuery): Promise<PaginatedResult<UserProfile & { status: string; suspendedAt: string | null }>> {
+  async listUsers(
+    query: AdminUserQuery,
+  ): Promise<PaginatedResult<UserProfile & { status: string; suspendedAt: string | null }>> {
     const where: Prisma.UserWhereInput = {
       role: query.role,
       plan: query.plan,
@@ -186,7 +206,9 @@ export class AdminService {
     return toUserProfile(user);
   }
 
-  async listReports(query: AdminReportQuery): Promise<PaginatedResult<Report & { userEmail: string }>> {
+  async listReports(
+    query: AdminReportQuery,
+  ): Promise<PaginatedResult<Report & { userEmail: string }>> {
     const where: Prisma.ReportWhereInput = { status: query.status, userId: query.userId };
     const { skip, take } = Paginated.skipTake(query);
     const [rows, total] = await this.prisma.$transaction([
@@ -347,15 +369,24 @@ export class AdminService {
     };
   }
 
-  async patchCountry(code: string, patch: CountryPatch): Promise<{ code: string; updatedAt: string }> {
-    const country = await this.prisma.country.findUnique({ where: { code: code.toUpperCase() }, select: { id: true } });
+  async patchCountry(
+    code: string,
+    patch: CountryPatch,
+  ): Promise<{ code: string; updatedAt: string }> {
+    const country = await this.prisma.country.findUnique({
+      where: { code: code.toUpperCase() },
+      select: { id: true },
+    });
     if (!country) throw AppException.notFound('Country not found');
     const updated = await this.prisma.country.update({
       where: { id: country.id },
       data: {
         summary: patch.summary === undefined ? undefined : patch.summary,
         capital: patch.capital === undefined ? undefined : patch.capital,
-        population: patch.population === undefined ? undefined : BigInt(Math.max(0, Math.floor(patch.population))),
+        population:
+          patch.population === undefined
+            ? undefined
+            : BigInt(Math.max(0, Math.floor(patch.population))),
         areaKm2: patch.areaKm2,
         wikipediaUrl: patch.wikipediaUrl === undefined ? undefined : patch.wikipediaUrl,
         coatOfArmsUrl: patch.coatOfArmsUrl === undefined ? undefined : patch.coatOfArmsUrl,

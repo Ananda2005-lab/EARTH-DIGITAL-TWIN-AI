@@ -79,14 +79,23 @@ export class RedisService implements OnModuleDestroy {
   async set<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
     try {
       const envelope: CachedEnvelope<T> = { value, storedAt: Date.now() };
-      await this.client.set(key, JSON.stringify(envelope), 'EX', Math.max(1, Math.floor(ttlSeconds)));
+      await this.client.set(
+        key,
+        JSON.stringify(envelope),
+        'EX',
+        Math.max(1, Math.floor(ttlSeconds)),
+      );
     } catch {
       // Cache writes are best-effort.
     }
   }
 
   /** Read-through helper: returns the cached value or computes and stores it. */
-  async wrap<T>(key: string, ttlSeconds: number, factory: () => Promise<T>): Promise<{ value: T; cached: boolean; ageSeconds: number }> {
+  async wrap<T>(
+    key: string,
+    ttlSeconds: number,
+    factory: () => Promise<T>,
+  ): Promise<{ value: T; cached: boolean; ageSeconds: number }> {
     const hit = await this.get<T>(key);
     if (hit) return { value: hit.value, cached: true, ageSeconds: hit.ageSeconds };
     const value = await factory();
@@ -110,12 +119,20 @@ export class RedisService implements OnModuleDestroy {
     let removed = 0;
     try {
       do {
-        const [next, keys] = await this.client.scan(cursor, 'MATCH', `${prefix}${pattern}`, 'COUNT', 250);
+        const [next, keys] = await this.client.scan(
+          cursor,
+          'MATCH',
+          `${prefix}${pattern}`,
+          'COUNT',
+          250,
+        );
         cursor = next;
         if (keys.length > 0) {
           // SCAN returns prefixed keys while the client re-applies keyPrefix on
           // write commands, so strip it before deleting.
-          const unprefixed = keys.map((key) => (key.startsWith(prefix) ? key.slice(prefix.length) : key));
+          const unprefixed = keys.map((key) =>
+            key.startsWith(prefix) ? key.slice(prefix.length) : key,
+          );
           removed += await this.client.del(...unprefixed);
         }
       } while (cursor !== '0');

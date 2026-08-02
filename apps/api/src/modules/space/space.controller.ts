@@ -1,5 +1,12 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { z } from 'zod';
 import type { LngLat } from '@edt/shared';
 import { Attribution } from 'src/common/decorators/attribution.decorator';
@@ -27,7 +34,8 @@ export class SpaceController {
   @CacheTtl(900)
   @ApiOperation({
     summary: 'Space weather summary',
-    description: 'Planetary Kp, solar wind, Bz and F10.7 flux, plus the aurora visibility latitude.',
+    description:
+      'Planetary Kp, solar wind, Bz and F10.7 flux, plus the aurora visibility latitude.',
   })
   @ApiOkResponse({ description: 'Space weather snapshot' })
   async weather(): Promise<SpaceWeather> {
@@ -46,10 +54,20 @@ export class SpaceController {
   @Get('iss/track')
   @CacheTtl(60)
   @ApiOperation({ summary: 'ISS ground track', description: 'Sampled forward from now.' })
-  @ApiQuery({ name: 'minutes', required: false, schema: { type: 'integer', minimum: 10, maximum: 240, default: 90 } })
+  @ApiQuery({
+    name: 'minutes',
+    required: false,
+    schema: { type: 'integer', minimum: 10, maximum: 240, default: 90 },
+  })
   @ApiOkResponse({ description: 'Ground track coordinates' })
   async issTrack(@Query('minutes') minutes?: string): Promise<LngLat[]> {
-    const parsed = z.coerce.number().int().min(10).max(240).default(90).parse(minutes ?? 90);
+    const parsed = z.coerce
+      .number()
+      .int()
+      .min(10)
+      .max(240)
+      .default(90)
+      .parse(minutes ?? 90);
     return this.space.issTrack(parsed);
   }
 

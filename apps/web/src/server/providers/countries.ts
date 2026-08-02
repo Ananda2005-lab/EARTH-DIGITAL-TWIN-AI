@@ -43,14 +43,61 @@ interface WorldBankPoint {
   value: number | null;
 }
 
-type WorldBankResponse = [{ page: number; pages: number; total: number } | null, WorldBankPoint[] | null];
+type WorldBankResponse = [
+  { page: number; pages: number; total: number } | null,
+  WorldBankPoint[] | null,
+];
 
 /** World Bank aggregates (regions, income groups) that must never appear in rankings. */
 const AGGREGATE_CODES = new Set([
-  'WLD', 'EUU', 'ARB', 'OED', 'LCN', 'EAS', 'ECS', 'MEA', 'NAC', 'SAS', 'SSF', 'EMU',
-  'CEB', 'TEA', 'TEC', 'TLA', 'TMN', 'TSA', 'TSS', 'IBD', 'IBT', 'IDA', 'IDB', 'IDX',
-  'LMY', 'LIC', 'LMC', 'MIC', 'UMC', 'HIC', 'PST', 'PRE', 'SST', 'FCS', 'HPC', 'LDC',
-  'LTE', 'AFE', 'AFW', 'EAP', 'ECA', 'SSA', 'INX', 'OSS', 'MNA', 'CSS', 'EAR', 'EUC',
+  'WLD',
+  'EUU',
+  'ARB',
+  'OED',
+  'LCN',
+  'EAS',
+  'ECS',
+  'MEA',
+  'NAC',
+  'SAS',
+  'SSF',
+  'EMU',
+  'CEB',
+  'TEA',
+  'TEC',
+  'TLA',
+  'TMN',
+  'TSA',
+  'TSS',
+  'IBD',
+  'IBT',
+  'IDA',
+  'IDB',
+  'IDX',
+  'LMY',
+  'LIC',
+  'LMC',
+  'MIC',
+  'UMC',
+  'HIC',
+  'PST',
+  'PRE',
+  'SST',
+  'FCS',
+  'HPC',
+  'LDC',
+  'LTE',
+  'AFE',
+  'AFW',
+  'EAP',
+  'ECA',
+  'SSA',
+  'INX',
+  'OSS',
+  'MNA',
+  'CSS',
+  'EAR',
+  'EUC',
 ]);
 
 async function getLatestIndicator(
@@ -136,33 +183,222 @@ export const INDICATOR_CATALOGUE: readonly {
   higherIsBetter: boolean;
   description: string;
 }[] = [
-  { id: 'NY.GDP.MKTP.CD', label: 'GDP (nominal)', unit: 'USD', category: 'Economy', higherIsBetter: true, description: 'Gross domestic product at current market prices.' },
-  { id: 'NY.GDP.PCAP.CD', label: 'GDP per capita', unit: 'USD', category: 'Economy', higherIsBetter: true, description: 'Nominal output divided by mid-year population.' },
-  { id: 'NY.GDP.PCAP.PP.CD', label: 'GDP per capita (PPP)', unit: 'USD', category: 'Economy', higherIsBetter: true, description: 'Purchasing-power adjusted output per person.' },
-  { id: 'NY.GDP.MKTP.KD.ZG', label: 'GDP growth', unit: '%', category: 'Economy', higherIsBetter: true, description: 'Annual percentage growth of real GDP.' },
-  { id: 'FP.CPI.TOTL.ZG', label: 'Inflation (CPI)', unit: '%', category: 'Economy', higherIsBetter: false, description: 'Annual change in consumer prices.' },
-  { id: 'SL.UEM.TOTL.ZS', label: 'Unemployment', unit: '%', category: 'Economy', higherIsBetter: false, description: 'Share of the labour force without work but seeking employment.' },
-  { id: 'NE.EXP.GNFS.ZS', label: 'Exports', unit: '% of GDP', category: 'Economy', higherIsBetter: true, description: 'Exports of goods and services as a share of GDP.' },
-  { id: 'SP.POP.TOTL', label: 'Population', unit: 'people', category: 'Population', higherIsBetter: true, description: 'Total mid-year resident population.' },
-  { id: 'SP.POP.GROW', label: 'Population growth', unit: '%', category: 'Population', higherIsBetter: true, description: 'Annual exponential population growth rate.' },
-  { id: 'SP.URB.TOTL.IN.ZS', label: 'Urban population', unit: '%', category: 'Population', higherIsBetter: true, description: 'Share of people living in urban agglomerations.' },
-  { id: 'SP.DYN.TFRT.IN', label: 'Fertility rate', unit: 'births', category: 'Population', higherIsBetter: true, description: 'Births per woman over a lifetime at current rates.' },
-  { id: 'SP.DYN.LE00.IN', label: 'Life expectancy', unit: 'years', category: 'Health', higherIsBetter: true, description: 'Life expectancy at birth, both sexes.' },
-  { id: 'SH.DYN.MORT', label: 'Under-5 mortality', unit: 'per 1,000', category: 'Health', higherIsBetter: false, description: 'Probability of dying before age five per 1,000 live births.' },
-  { id: 'SH.XPD.CHEX.GD.ZS', label: 'Health expenditure', unit: '% of GDP', category: 'Health', higherIsBetter: true, description: 'Current health spending as a share of GDP.' },
-  { id: 'SE.ADT.LITR.ZS', label: 'Literacy rate', unit: '%', category: 'Society', higherIsBetter: true, description: 'Adults aged 15+ who can read and write.' },
-  { id: 'SE.XPD.TOTL.GD.ZS', label: 'Education expenditure', unit: '% of GDP', category: 'Society', higherIsBetter: true, description: 'Government spending on education as a share of GDP.' },
-  { id: 'IT.NET.USER.ZS', label: 'Internet users', unit: '%', category: 'Society', higherIsBetter: true, description: 'Individuals using the internet in the last three months.' },
-  { id: 'EN.GHG.CO2.PC.CE.AR5', label: 'CO₂ per capita', unit: 't', category: 'Environment', higherIsBetter: false, description: 'Carbon dioxide emissions per person, excluding land use.' },
-  { id: 'EG.FEC.RNEW.ZS', label: 'Renewable energy share', unit: '%', category: 'Environment', higherIsBetter: true, description: 'Renewables as a share of total final energy consumption.' },
-  { id: 'AG.LND.FRST.ZS', label: 'Forest area', unit: '%', category: 'Environment', higherIsBetter: true, description: 'Land under natural or planted forest stands.' },
-  { id: 'ER.H2O.FWTL.ZS', label: 'Freshwater withdrawal', unit: '% of resources', category: 'Environment', higherIsBetter: false, description: 'Annual freshwater withdrawals against internal resources.' },
-  { id: 'EG.ELC.ACCS.ZS', label: 'Access to electricity', unit: '%', category: 'Infrastructure', higherIsBetter: true, description: 'Population with access to electricity.' },
-  { id: 'IS.AIR.PSGR', label: 'Air passengers carried', unit: 'passengers', category: 'Infrastructure', higherIsBetter: true, description: 'Domestic and international passengers on registered carriers.' },
-  { id: 'ST.INT.ARVL', label: 'Tourist arrivals', unit: 'arrivals', category: 'Tourism', higherIsBetter: true, description: 'International inbound overnight visitors.' },
-  { id: 'ST.INT.RCPT.CD', label: 'Tourism receipts', unit: 'USD', category: 'Tourism', higherIsBetter: true, description: 'International tourism receipts including transport.' },
-  { id: 'MS.MIL.XPND.GD.ZS', label: 'Military expenditure', unit: '% of GDP', category: 'Governance', higherIsBetter: false, description: 'Defence spending as a share of GDP.' },
-  { id: 'IC.BUS.EASE.XQ', label: 'Ease of doing business', unit: 'rank', category: 'Governance', higherIsBetter: false, description: 'Composite regulatory environment ranking.' },
+  {
+    id: 'NY.GDP.MKTP.CD',
+    label: 'GDP (nominal)',
+    unit: 'USD',
+    category: 'Economy',
+    higherIsBetter: true,
+    description: 'Gross domestic product at current market prices.',
+  },
+  {
+    id: 'NY.GDP.PCAP.CD',
+    label: 'GDP per capita',
+    unit: 'USD',
+    category: 'Economy',
+    higherIsBetter: true,
+    description: 'Nominal output divided by mid-year population.',
+  },
+  {
+    id: 'NY.GDP.PCAP.PP.CD',
+    label: 'GDP per capita (PPP)',
+    unit: 'USD',
+    category: 'Economy',
+    higherIsBetter: true,
+    description: 'Purchasing-power adjusted output per person.',
+  },
+  {
+    id: 'NY.GDP.MKTP.KD.ZG',
+    label: 'GDP growth',
+    unit: '%',
+    category: 'Economy',
+    higherIsBetter: true,
+    description: 'Annual percentage growth of real GDP.',
+  },
+  {
+    id: 'FP.CPI.TOTL.ZG',
+    label: 'Inflation (CPI)',
+    unit: '%',
+    category: 'Economy',
+    higherIsBetter: false,
+    description: 'Annual change in consumer prices.',
+  },
+  {
+    id: 'SL.UEM.TOTL.ZS',
+    label: 'Unemployment',
+    unit: '%',
+    category: 'Economy',
+    higherIsBetter: false,
+    description: 'Share of the labour force without work but seeking employment.',
+  },
+  {
+    id: 'NE.EXP.GNFS.ZS',
+    label: 'Exports',
+    unit: '% of GDP',
+    category: 'Economy',
+    higherIsBetter: true,
+    description: 'Exports of goods and services as a share of GDP.',
+  },
+  {
+    id: 'SP.POP.TOTL',
+    label: 'Population',
+    unit: 'people',
+    category: 'Population',
+    higherIsBetter: true,
+    description: 'Total mid-year resident population.',
+  },
+  {
+    id: 'SP.POP.GROW',
+    label: 'Population growth',
+    unit: '%',
+    category: 'Population',
+    higherIsBetter: true,
+    description: 'Annual exponential population growth rate.',
+  },
+  {
+    id: 'SP.URB.TOTL.IN.ZS',
+    label: 'Urban population',
+    unit: '%',
+    category: 'Population',
+    higherIsBetter: true,
+    description: 'Share of people living in urban agglomerations.',
+  },
+  {
+    id: 'SP.DYN.TFRT.IN',
+    label: 'Fertility rate',
+    unit: 'births',
+    category: 'Population',
+    higherIsBetter: true,
+    description: 'Births per woman over a lifetime at current rates.',
+  },
+  {
+    id: 'SP.DYN.LE00.IN',
+    label: 'Life expectancy',
+    unit: 'years',
+    category: 'Health',
+    higherIsBetter: true,
+    description: 'Life expectancy at birth, both sexes.',
+  },
+  {
+    id: 'SH.DYN.MORT',
+    label: 'Under-5 mortality',
+    unit: 'per 1,000',
+    category: 'Health',
+    higherIsBetter: false,
+    description: 'Probability of dying before age five per 1,000 live births.',
+  },
+  {
+    id: 'SH.XPD.CHEX.GD.ZS',
+    label: 'Health expenditure',
+    unit: '% of GDP',
+    category: 'Health',
+    higherIsBetter: true,
+    description: 'Current health spending as a share of GDP.',
+  },
+  {
+    id: 'SE.ADT.LITR.ZS',
+    label: 'Literacy rate',
+    unit: '%',
+    category: 'Society',
+    higherIsBetter: true,
+    description: 'Adults aged 15+ who can read and write.',
+  },
+  {
+    id: 'SE.XPD.TOTL.GD.ZS',
+    label: 'Education expenditure',
+    unit: '% of GDP',
+    category: 'Society',
+    higherIsBetter: true,
+    description: 'Government spending on education as a share of GDP.',
+  },
+  {
+    id: 'IT.NET.USER.ZS',
+    label: 'Internet users',
+    unit: '%',
+    category: 'Society',
+    higherIsBetter: true,
+    description: 'Individuals using the internet in the last three months.',
+  },
+  {
+    id: 'EN.GHG.CO2.PC.CE.AR5',
+    label: 'CO₂ per capita',
+    unit: 't',
+    category: 'Environment',
+    higherIsBetter: false,
+    description: 'Carbon dioxide emissions per person, excluding land use.',
+  },
+  {
+    id: 'EG.FEC.RNEW.ZS',
+    label: 'Renewable energy share',
+    unit: '%',
+    category: 'Environment',
+    higherIsBetter: true,
+    description: 'Renewables as a share of total final energy consumption.',
+  },
+  {
+    id: 'AG.LND.FRST.ZS',
+    label: 'Forest area',
+    unit: '%',
+    category: 'Environment',
+    higherIsBetter: true,
+    description: 'Land under natural or planted forest stands.',
+  },
+  {
+    id: 'ER.H2O.FWTL.ZS',
+    label: 'Freshwater withdrawal',
+    unit: '% of resources',
+    category: 'Environment',
+    higherIsBetter: false,
+    description: 'Annual freshwater withdrawals against internal resources.',
+  },
+  {
+    id: 'EG.ELC.ACCS.ZS',
+    label: 'Access to electricity',
+    unit: '%',
+    category: 'Infrastructure',
+    higherIsBetter: true,
+    description: 'Population with access to electricity.',
+  },
+  {
+    id: 'IS.AIR.PSGR',
+    label: 'Air passengers carried',
+    unit: 'passengers',
+    category: 'Infrastructure',
+    higherIsBetter: true,
+    description: 'Domestic and international passengers on registered carriers.',
+  },
+  {
+    id: 'ST.INT.ARVL',
+    label: 'Tourist arrivals',
+    unit: 'arrivals',
+    category: 'Tourism',
+    higherIsBetter: true,
+    description: 'International inbound overnight visitors.',
+  },
+  {
+    id: 'ST.INT.RCPT.CD',
+    label: 'Tourism receipts',
+    unit: 'USD',
+    category: 'Tourism',
+    higherIsBetter: true,
+    description: 'International tourism receipts including transport.',
+  },
+  {
+    id: 'MS.MIL.XPND.GD.ZS',
+    label: 'Military expenditure',
+    unit: '% of GDP',
+    category: 'Governance',
+    higherIsBetter: false,
+    description: 'Defence spending as a share of GDP.',
+  },
+  {
+    id: 'IC.BUS.EASE.XQ',
+    label: 'Ease of doing business',
+    unit: 'rank',
+    category: 'Governance',
+    higherIsBetter: false,
+    description: 'Composite regulatory environment ranking.',
+  },
 ] as const;
 
 export function findIndicator(id: string) {
@@ -262,13 +498,20 @@ export async function getWikipediaSummary(title: string): Promise<WikiSummary | 
         extract: string;
         thumbnail?: { source: string };
         content_urls?: { desktop?: { page?: string } };
-      } | null>(url, { provider: 'Wikipedia', revalidate: 86_400, retries: 1, allowNotFound: true });
+      } | null>(url, {
+        provider: 'Wikipedia',
+        revalidate: 86_400,
+        retries: 1,
+        allowNotFound: true,
+      });
       if (!raw?.extract) return null;
       return {
         title: raw.title,
         extract: raw.extract,
         thumbnail: raw.thumbnail?.source ?? null,
-        url: raw.content_urls?.desktop?.page ?? `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`,
+        url:
+          raw.content_urls?.desktop?.page ??
+          `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`,
       };
     } catch {
       return null;
@@ -304,7 +547,9 @@ export async function getRanking(
       revalidate: 86_400,
     });
     return (raw?.[1] ?? [])
-      .filter((p) => p.value !== null && p.countryiso3code && !AGGREGATE_CODES.has(p.countryiso3code))
+      .filter(
+        (p) => p.value !== null && p.countryiso3code && !AGGREGATE_CODES.has(p.countryiso3code),
+      )
       .map((p) => {
         const reference = countryByCode(p.countryiso3code);
         return {

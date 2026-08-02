@@ -8,13 +8,22 @@ export interface Rgb {
 
 export function hexToRgb(hex: string): Rgb {
   const clean = hex.replace('#', '');
-  const full = clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean;
+  const full =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : clean;
   const int = Number.parseInt(full, 16);
   return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
 }
 
 export function rgbToHex({ r, g, b }: Rgb): string {
-  const toHex = (v: number) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, '0');
+  const toHex = (v: number) =>
+    Math.round(Math.min(255, Math.max(0, v)))
+      .toString(16)
+      .padStart(2, '0');
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 

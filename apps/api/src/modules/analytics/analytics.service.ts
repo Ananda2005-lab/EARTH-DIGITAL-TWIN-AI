@@ -71,7 +71,9 @@ export class AnalyticsService {
         ...series,
         countryCode: code,
         points: series.points.filter(
-          (point) => (!options.from || point.year >= options.from) && (!options.to || point.year <= options.to),
+          (point) =>
+            (!options.from || point.year >= options.from) &&
+            (!options.to || point.year <= options.to),
         ),
       });
     }
@@ -91,7 +93,9 @@ export class AnalyticsService {
     const rows = await this.prisma.countryIndicator.findMany({
       where: {
         indicator: definition.code,
-        country: options.continent ? { continent: options.continent as PrismaContinent } : undefined,
+        country: options.continent
+          ? { continent: options.continent as PrismaContinent }
+          : undefined,
       },
       orderBy: { year: 'desc' },
       select: {
@@ -101,7 +105,10 @@ export class AnalyticsService {
       },
     });
 
-    const latest = new Map<string, { value: number; year: number; name: string; flagEmoji: string; continent: string }>();
+    const latest = new Map<
+      string,
+      { value: number; year: number; name: string; flagEmoji: string; continent: string }
+    >();
     for (const row of rows) {
       if (latest.has(row.country.code)) continue;
       latest.set(row.country.code, {
@@ -127,14 +134,28 @@ export class AnalyticsService {
       }));
   }
 
-  async correlation(options: { x: string; y: string; continent?: string }): Promise<CorrelationResult> {
+  async correlation(options: {
+    x: string;
+    y: string;
+    continent?: string;
+  }): Promise<CorrelationResult> {
     const xDefinition = findIndicator(options.x);
     const yDefinition = findIndicator(options.y);
     if (!xDefinition || !yDefinition) throw AppException.badRequest('Unknown indicator code');
 
     const [xRanking, yRanking] = await Promise.all([
-      this.ranking({ indicator: xDefinition.code, direction: 'desc', limit: 250, continent: options.continent }),
-      this.ranking({ indicator: yDefinition.code, direction: 'desc', limit: 250, continent: options.continent }),
+      this.ranking({
+        indicator: xDefinition.code,
+        direction: 'desc',
+        limit: 250,
+        continent: options.continent,
+      }),
+      this.ranking({
+        indicator: yDefinition.code,
+        direction: 'desc',
+        limit: 250,
+        continent: options.continent,
+      }),
     ]);
 
     const yByCode = new Map(yRanking.map((entry) => [entry.code, entry]));
@@ -145,32 +166,38 @@ export class AnalyticsService {
           ? { code: entry.code, name: entry.name, x: entry.value, y: counterpart.value }
           : null;
       })
-      .filter((point): point is { code: string; name: string; x: number; y: number } => point !== null);
+      .filter(
+        (point): point is { code: string; name: string; x: number; y: number } => point !== null,
+      );
 
     return {
       x: xDefinition,
       y: yDefinition,
-      coefficient: pearson(points.map((point) => point.x), points.map((point) => point.y)),
+      coefficient: pearson(
+        points.map((point) => point.x),
+        points.map((point) => point.y),
+      ),
       sampleSize: points.length,
       points,
     };
   }
 
   async overview(): Promise<PlatformOverview> {
-    const [countries, cities, airports, seaports, observations, aggregate, byContinent] = await Promise.all([
-      this.prisma.country.count(),
-      this.prisma.city.count(),
-      this.prisma.airport.count(),
-      this.prisma.seaport.count(),
-      this.prisma.countryIndicator.count(),
-      this.prisma.country.aggregate({ _sum: { population: true, areaKm2: true } }),
-      this.prisma.country.groupBy({
-        by: ['continent'],
-        _count: { _all: true },
-        _sum: { population: true },
-        orderBy: { continent: 'asc' },
-      }),
-    ]);
+    const [countries, cities, airports, seaports, observations, aggregate, byContinent] =
+      await Promise.all([
+        this.prisma.country.count(),
+        this.prisma.city.count(),
+        this.prisma.airport.count(),
+        this.prisma.seaport.count(),
+        this.prisma.countryIndicator.count(),
+        this.prisma.country.aggregate({ _sum: { population: true, areaKm2: true } }),
+        this.prisma.country.groupBy({
+          by: ['continent'],
+          _count: { _all: true },
+          _sum: { population: true },
+          orderBy: { continent: 'asc' },
+        }),
+      ]);
 
     return {
       countries,

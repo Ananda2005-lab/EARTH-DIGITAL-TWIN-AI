@@ -1,7 +1,19 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { z } from 'zod';
-import { countryCodeSchema, pointQuerySchema, type AirQualityBundle, type ClimateBundle } from '@edt/shared';
+import {
+  countryCodeSchema,
+  pointQuerySchema,
+  type AirQualityBundle,
+  type ClimateBundle,
+} from '@edt/shared';
 import { Attribution } from 'src/common/decorators/attribution.decorator';
 import { CacheTtl } from 'src/common/decorators/cache-ttl.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -41,7 +53,10 @@ export class EnvironmentController {
 
   @Get('air-quality')
   @CacheTtl(1800)
-  @ApiOperation({ summary: 'Air quality for a coordinate', description: 'US EPA AQI recomputed from CAMS concentrations.' })
+  @ApiOperation({
+    summary: 'Air quality for a coordinate',
+    description: 'US EPA AQI recomputed from CAMS concentrations.',
+  })
   @ApiOkResponse({ description: 'Air quality bundle' })
   async airQuality(@Query() query: EnvironmentCoordinateDto): Promise<AirQualityBundle> {
     return this.environment.airQuality({ lng: query.lng, lat: query.lat });
@@ -72,12 +87,22 @@ export class EnvironmentController {
   @Get('air-quality/worst')
   @CacheTtl(3600)
   @ApiOperation({ summary: 'Cities with the worst recorded air quality' })
-  @ApiQuery({ name: 'limit', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+  })
   @ApiOkResponse({ description: 'Ranked cities' })
   async worst(
     @Query('limit') limit?: string,
   ): Promise<{ id: string; name: string; countryCode: string; averageAqi: number }[]> {
-    const parsed = z.coerce.number().int().min(1).max(100).default(20).parse(limit ?? 20);
+    const parsed = z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(20)
+      .parse(limit ?? 20);
     return this.environment.worstAirQuality(parsed);
   }
 }

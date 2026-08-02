@@ -145,7 +145,7 @@
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+    @apply ring-ring ring-offset-background outline-none ring-2 ring-offset-2;
   }
 
   /* Sleek scrollbars that match the glass aesthetic. */
@@ -198,7 +198,7 @@
   /* ── Glass surfaces ───────────────────────────────────────────────────── */
   .glass {
     background-color: hsl(var(--glass-tint) / var(--glass-opacity));
-    @apply border border-white/[0.06] shadow-glass backdrop-blur-2xl;
+    @apply shadow-glass border border-white/[0.06] backdrop-blur-2xl;
   }
 
   .light .glass {
@@ -207,7 +207,7 @@
 
   .glass-sm {
     background-color: hsl(var(--glass-tint) / calc(var(--glass-opacity) - 0.08));
-    @apply border border-white/[0.05] shadow-glass-sm backdrop-blur-xl;
+    @apply shadow-glass-sm border border-white/[0.05] backdrop-blur-xl;
   }
 
   .light .glass-sm {
@@ -283,8 +283,7 @@
   }
 
   .grid-overlay {
-    background-image:
-      linear-gradient(hsl(var(--border) / 0.35) 1px, transparent 1px),
+    background-image: linear-gradient(hsl(var(--border) / 0.35) 1px, transparent 1px),
       linear-gradient(90deg, hsl(var(--border) / 0.35) 1px, transparent 1px);
     background-size: 56px 56px;
     mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
@@ -300,18 +299,13 @@
   }
 
   .divider-glow {
-    background: linear-gradient(
-      90deg,
-      transparent,
-      hsl(var(--primary) / 0.45) 50%,
-      transparent
-    );
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.45) 50%, transparent);
     height: 1px;
   }
 
   /* ── Interactions ─────────────────────────────────────────────────────── */
   .hover-lift {
-    @apply transition-all duration-300 ease-premium hover:-translate-y-0.5 hover:shadow-elevated;
+    @apply ease-premium hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5;
   }
 
   .press {
@@ -319,30 +313,30 @@
   }
 
   .skeleton {
-    @apply relative overflow-hidden rounded-md bg-muted/60;
+    @apply bg-muted/60 relative overflow-hidden rounded-md;
   }
 
   .skeleton::after {
     content: '';
-    @apply absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent;
+    @apply animate-shimmer absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent;
   }
 
   /* ── Data viz helpers ─────────────────────────────────────────────────── */
   .stat-value {
-    @apply numeric text-2xl font-semibold tracking-tight tabular-nums;
+    @apply numeric text-2xl font-semibold tabular-nums tracking-tight;
   }
 
   .stat-label {
-    @apply text-2xs font-medium uppercase tracking-[0.14em] text-muted-foreground;
+    @apply text-2xs text-muted-foreground font-medium uppercase tracking-[0.14em];
   }
 
   .live-dot {
-    @apply relative inline-flex h-2 w-2 rounded-full bg-success;
+    @apply bg-success relative inline-flex h-2 w-2 rounded-full;
   }
 
   .live-dot::before {
     content: '';
-    @apply absolute inset-0 animate-pulse-ring rounded-full bg-success/70;
+    @apply animate-pulse-ring bg-success/70 absolute inset-0 rounded-full;
   }
 
   /* ── Map / globe chrome ───────────────────────────────────────────────── */
@@ -372,7 +366,7 @@
   }
 
   .maplibregl-popup-content {
-    @apply glass rounded-xl px-3 py-2 text-sm text-foreground;
+    @apply glass text-foreground rounded-xl px-3 py-2 text-sm;
     background-color: hsl(var(--glass-tint) / 0.9) !important;
   }
 
@@ -392,7 +386,13 @@
   }
 
   .scroll-fade-y {
-    mask-image: linear-gradient(to bottom, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 16px,
+      #000 calc(100% - 16px),
+      transparent
+    );
   }
 
   .safe-bottom {

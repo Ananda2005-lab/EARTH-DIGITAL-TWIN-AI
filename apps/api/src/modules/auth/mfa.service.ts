@@ -41,13 +41,19 @@ export class MfaService {
   /** Step 1: create (or replace) an unconfirmed enrolment. */
   async beginEnrolment(userId: string, email: string): Promise<MfaEnrolment> {
     const security = this.config.get('security', { infer: true });
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { mfaEnabled: true } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { mfaEnabled: true },
+    });
     if (!user) throw AppException.notFound('User not found');
-    if (user.mfaEnabled) throw AppException.conflict('Multi-factor authentication is already enabled');
+    if (user.mfaEnabled)
+      throw AppException.conflict('Multi-factor authentication is already enabled');
 
     const secret = generateTotpSecret();
     const recoveryCodes = generateRecoveryCodes();
-    const recoveryHashes = await Promise.all(recoveryCodes.map((code) => hash(code, security.bcryptCost)));
+    const recoveryHashes = await Promise.all(
+      recoveryCodes.map((code) => hash(code, security.bcryptCost)),
+    );
 
     await this.prisma.mfaSecret.upsert({
       where: { userId },
@@ -83,7 +89,8 @@ export class MfaService {
   async confirmEnrolment(userId: string, code: string): Promise<void> {
     const record = await this.prisma.mfaSecret.findUnique({ where: { userId } });
     if (!record) throw AppException.badRequest('Start multi-factor enrolment first');
-    if (record.confirmedAt) throw AppException.conflict('Multi-factor authentication is already enabled');
+    if (record.confirmedAt)
+      throw AppException.conflict('Multi-factor authentication is already enabled');
 
     const verification = this.verifyAgainst(record.secretEncrypted, code, record);
     if (!verification.valid || verification.counter === null) {
@@ -93,7 +100,11 @@ export class MfaService {
     await this.prisma.$transaction([
       this.prisma.mfaSecret.update({
         where: { userId },
-        data: { confirmedAt: new Date(), lastUsedAt: new Date(), lastUsedCounter: BigInt(verification.counter) },
+        data: {
+          confirmedAt: new Date(),
+          lastUsedAt: new Date(),
+          lastUsedCounter: BigInt(verification.counter),
+        },
       }),
       this.prisma.user.update({ where: { id: userId }, data: { mfaEnabled: true } }),
     ]);
@@ -103,11 +114,15 @@ export class MfaService {
   async verifyForLogin(userId: string, code: string | undefined): Promise<void> {
     if (!code) throw AppException.unauthorised('A multi-factor code is required');
     const record = await this.prisma.mfaSecret.findUnique({ where: { userId } });
-    if (!record?.confirmedAt) throw AppException.badRequest('Multi-factor authentication is not configured');
+    if (!record?.confirmedAt)
+      throw AppException.badRequest('Multi-factor authentication is not configured');
 
     const verification = this.verifyAgainst(record.secretEncrypted, code, record);
     if (verification.valid && verification.counter !== null) {
-      if (record.lastUsedCounter !== null && BigInt(verification.counter) <= record.lastUsedCounter) {
+      if (
+        record.lastUsedCounter !== null &&
+        BigInt(verification.counter) <= record.lastUsedCounter
+      ) {
         throw AppException.unauthorised('That code has already been used');
       }
       await this.prisma.mfaSecret.update({
@@ -124,7 +139,8 @@ export class MfaService {
   /** Disable MFA. Requires a valid current code to prevent lockout griefing. */
   async disable(userId: string, code: string): Promise<void> {
     const record = await this.prisma.mfaSecret.findUnique({ where: { userId } });
-    if (!record?.confirmedAt) throw AppException.badRequest('Multi-factor authentication is not enabled');
+    if (!record?.confirmedAt)
+      throw AppException.badRequest('Multi-factor authentication is not enabled');
 
     const verification = this.verifyAgainst(record.secretEncrypted, code, record);
     const recovered = verification.valid
@@ -139,7 +155,10 @@ export class MfaService {
   }
 
   async isEnabled(userId: string): Promise<boolean> {
-    const record = await this.prisma.mfaSecret.findUnique({ where: { userId }, select: { confirmedAt: true } });
+    const record = await this.prisma.mfaSecret.findUnique({
+      where: { userId },
+      select: { confirmedAt: true },
+    });
     return Boolean(record?.confirmedAt);
   }
 
@@ -150,7 +169,8 @@ export class MfaService {
   ): { valid: boolean; counter: number | null } {
     const security = this.config.get('security', { infer: true });
     const secret = decryptSecret(encrypted, security.mfaEncryptionKey);
-    const algorithm = record.algorithm === 'SHA256' || record.algorithm === 'SHA512' ? record.algorithm : 'SHA1';
+    const algorithm =
+      record.algorithm === 'SHA256' || record.algorithm === 'SHA512' ? record.algorithm : 'SHA1';
     return verifyTotp(secret, code, {
       algorithm,
       digits: record.digits,
@@ -158,13 +178,20 @@ export class MfaService {
     });
   }
 
-  private async consumeRecoveryCode(userId: string, code: string, hashes: string[]): Promise<boolean> {
+  private async consumeRecoveryCode(
+    userId: string,
+    code: string,
+    hashes: string[],
+  ): Promise<boolean> {
     const normalised = code.trim().toLowerCase();
     for (const candidate of hashes) {
       if (await compare(normalised, candidate)) {
         await this.prisma.mfaSecret.update({
           where: { userId },
-          data: { recoveryHashes: hashes.filter((entry) => entry !== candidate), lastUsedAt: new Date() },
+          data: {
+            recoveryHashes: hashes.filter((entry) => entry !== candidate),
+            lastUsedAt: new Date(),
+          },
         });
         return true;
       }

@@ -79,7 +79,10 @@ export const POLLUTANT_LABEL: Record<Pollutant, string> = {
 };
 
 /** US EPA breakpoints (µg/m³ unless noted) used to convert concentrations to AQI. */
-export const AQI_BREAKPOINTS: Record<Pollutant, { cLow: number; cHigh: number; iLow: number; iHigh: number }[]> = {
+export const AQI_BREAKPOINTS: Record<
+  Pollutant,
+  { cLow: number; cHigh: number; iLow: number; iHigh: number }[]
+> = {
   pm25: [
     { cLow: 0, cHigh: 12, iLow: 0, iHigh: 50 },
     { cLow: 12.1, cHigh: 35.4, iLow: 51, iHigh: 100 },
@@ -148,7 +151,10 @@ export const HAZARD_SEVERITY_COLOR: Record<HazardSeverity, string> = {
   extreme: '#ef4444',
 };
 
-export const HAZARD_META: Record<HazardKind, { label: string; icon: string; color: string; unit: string }> = {
+export const HAZARD_META: Record<
+  HazardKind,
+  { label: string; icon: string; color: string; unit: string }
+> = {
   earthquake: { label: 'Earthquake', icon: 'Activity', color: '#f87171', unit: 'M' },
   wildfire: { label: 'Wildfire', icon: 'Flame', color: '#fb923c', unit: 'MW' },
   volcano: { label: 'Volcano', icon: 'Mountain', color: '#f43f5e', unit: 'alert' },
@@ -162,7 +168,10 @@ export const HAZARD_META: Record<HazardKind, { label: string; icon: string; colo
 // ── Weather ───────────────────────────────────────────────────────────────────
 
 /** WMO 4677 weather interpretation codes used by Open-Meteo. */
-export const WMO_CODES: Record<number, { condition: WeatherCondition; label: string; icon: string }> = {
+export const WMO_CODES: Record<
+  number,
+  { condition: WeatherCondition; label: string; icon: string }
+> = {
   0: { condition: 'clear', label: 'Clear sky', icon: 'Sun' },
   1: { condition: 'mostly_clear', label: 'Mainly clear', icon: 'SunDim' },
   2: { condition: 'partly_cloudy', label: 'Partly cloudy', icon: 'CloudSun' },
@@ -189,12 +198,26 @@ export const WMO_CODES: Record<number, { condition: WeatherCondition; label: str
   85: { condition: 'snow_showers', label: 'Slight snow showers', icon: 'CloudSnow' },
   86: { condition: 'snow_showers', label: 'Heavy snow showers', icon: 'CloudSnow' },
   95: { condition: 'thunderstorm', label: 'Thunderstorm', icon: 'CloudLightning' },
-  96: { condition: 'thunderstorm_hail', label: 'Thunderstorm with slight hail', icon: 'CloudLightning' },
-  99: { condition: 'thunderstorm_hail', label: 'Thunderstorm with heavy hail', icon: 'CloudLightning' },
+  96: {
+    condition: 'thunderstorm_hail',
+    label: 'Thunderstorm with slight hail',
+    icon: 'CloudLightning',
+  },
+  99: {
+    condition: 'thunderstorm_hail',
+    label: 'Thunderstorm with heavy hail',
+    icon: 'CloudLightning',
+  },
 };
 
 export function describeWeatherCode(code: number) {
-  return WMO_CODES[code] ?? { condition: 'overcast' as WeatherCondition, label: 'Unknown', icon: 'Cloudy' };
+  return (
+    WMO_CODES[code] ?? {
+      condition: 'overcast' as WeatherCondition,
+      label: 'Unknown',
+      icon: 'Cloudy',
+    }
+  );
 }
 
 /** Beaufort scale for wind descriptions. */

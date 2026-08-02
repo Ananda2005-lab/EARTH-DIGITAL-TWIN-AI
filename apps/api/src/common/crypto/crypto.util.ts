@@ -43,7 +43,12 @@ export function encryptSecret(plaintext: string, key: string): string {
   const cipher = createCipheriv(AES_ALGORITHM, deriveKey(key), iv);
   const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
   const authTag = cipher.getAuthTag();
-  return ['v1', iv.toString('base64url'), authTag.toString('base64url'), ciphertext.toString('base64url')].join('.');
+  return [
+    'v1',
+    iv.toString('base64url'),
+    authTag.toString('base64url'),
+    ciphertext.toString('base64url'),
+  ].join('.');
 }
 
 export function decryptSecret(envelope: string, key: string): string {
@@ -51,9 +56,16 @@ export function decryptSecret(envelope: string, key: string): string {
   if (version !== 'v1' || !ivPart || !tagPart || !payloadPart) {
     throw new Error('Malformed encrypted secret envelope');
   }
-  const decipher = createDecipheriv(AES_ALGORITHM, deriveKey(key), Buffer.from(ivPart, 'base64url'));
+  const decipher = createDecipheriv(
+    AES_ALGORITHM,
+    deriveKey(key),
+    Buffer.from(ivPart, 'base64url'),
+  );
   decipher.setAuthTag(Buffer.from(tagPart, 'base64url'));
-  return Buffer.concat([decipher.update(Buffer.from(payloadPart, 'base64url')), decipher.final()]).toString('utf8');
+  return Buffer.concat([
+    decipher.update(Buffer.from(payloadPart, 'base64url')),
+    decipher.final(),
+  ]).toString('utf8');
 }
 
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';

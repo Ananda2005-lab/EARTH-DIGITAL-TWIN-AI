@@ -106,7 +106,10 @@ export function findCountries(query: string, limit = 8): CountryReference[] {
     else if (country.capital && normalise(country.capital).startsWith(q)) score = 30;
     if (score > 0) {
       // Prefer larger, sovereign states when scores tie.
-      scored.push({ country, score: score + (country.unMember ? 5 : 0) + Math.min(4, Math.log10(country.population + 1)) });
+      scored.push({
+        country,
+        score: score + (country.unMember ? 5 : 0) + Math.min(4, Math.log10(country.population + 1)),
+      });
     }
   }
   return scored

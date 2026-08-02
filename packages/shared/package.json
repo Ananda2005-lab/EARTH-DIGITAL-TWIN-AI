@@ -5,7 +5,9 @@
   "description": "Shared domain types, contracts, constants and utilities for Earth Digital Twin AI",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",

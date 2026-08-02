@@ -5,12 +5,36 @@
  * refreshes, so the platform stays inside free-tier quotas while feeling live.
  */
 export const UPSTREAM_PROVIDERS = {
-  openMeteoForecast: { label: 'Open-Meteo Forecast', ttl: 600, attribution: 'Open-Meteo · ECMWF IFS · NOAA GFS' },
-  openMeteoAirQuality: { label: 'Open-Meteo Air Quality', ttl: 1800, attribution: 'Copernicus CAMS via Open-Meteo' },
-  openMeteoArchive: { label: 'Open-Meteo Archive', ttl: 86_400, attribution: 'ERA5 reanalysis via Open-Meteo' },
-  openMeteoMarine: { label: 'Open-Meteo Marine', ttl: 10_800, attribution: 'Open-Meteo Marine · ECMWF WAM' },
-  openMeteoGeocoding: { label: 'Open-Meteo Geocoding', ttl: 3600, attribution: 'Open-Meteo Geocoding · GeoNames' },
-  openMeteoElevation: { label: 'Open-Meteo Elevation', ttl: 86_400, attribution: 'Copernicus DEM via Open-Meteo' },
+  openMeteoForecast: {
+    label: 'Open-Meteo Forecast',
+    ttl: 600,
+    attribution: 'Open-Meteo · ECMWF IFS · NOAA GFS',
+  },
+  openMeteoAirQuality: {
+    label: 'Open-Meteo Air Quality',
+    ttl: 1800,
+    attribution: 'Copernicus CAMS via Open-Meteo',
+  },
+  openMeteoArchive: {
+    label: 'Open-Meteo Archive',
+    ttl: 86_400,
+    attribution: 'ERA5 reanalysis via Open-Meteo',
+  },
+  openMeteoMarine: {
+    label: 'Open-Meteo Marine',
+    ttl: 10_800,
+    attribution: 'Open-Meteo Marine · ECMWF WAM',
+  },
+  openMeteoGeocoding: {
+    label: 'Open-Meteo Geocoding',
+    ttl: 3600,
+    attribution: 'Open-Meteo Geocoding · GeoNames',
+  },
+  openMeteoElevation: {
+    label: 'Open-Meteo Elevation',
+    ttl: 86_400,
+    attribution: 'Copernicus DEM via Open-Meteo',
+  },
   usgs: { label: 'USGS Earthquakes', ttl: 300, attribution: 'USGS Earthquake Hazards Program' },
   eonet: { label: 'NASA EONET', ttl: 1800, attribution: 'NASA EONET' },
   firms: { label: 'NASA FIRMS', ttl: 900, attribution: 'NASA FIRMS VIIRS' },
