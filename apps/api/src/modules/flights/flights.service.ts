@@ -122,11 +122,7 @@ export class FlightsService {
   }
 
   /** Airports from the gazetteer, optionally filtered by country or bbox. */
-  async airports(options: {
-    countryCode?: string;
-    bbox?: BBox;
-    limit: number;
-  }): Promise<
+  async airports(options: { countryCode?: string; bbox?: BBox; limit: number }): Promise<
     {
       icao: string;
       iata: string | null;

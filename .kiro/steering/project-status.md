@@ -15,6 +15,11 @@ npm workspaces monorepo, `@edt/*` scope.
 | `apps/api`        | `@edt/api`    | Substantially complete (131 files). Builds, lints, typechecks. |
 | `apps/web`        | `@edt/web`    | Config + data providers only. No UI yet.                       |
 | `scripts`         | —             | Two gazetteer index builders.                                  |
+| `infra/docker`    | —             | Local Postgres (PostGIS) + Redis compose file.                 |
+
+Git is initialized on `main`. `README.md` carries the quickstart;
+`apps/api/.env.example` and `apps/web/.env.example` document every environment
+variable.
 
 ## Verified commands
 
@@ -53,13 +58,9 @@ Ordered roughly by what blocks the most.
 1. **Frontend.** Every page and component. `apps/web/src/app` holds only
    `globals.css`; `src/lib` and `src/server/providers` are the only real code.
 2. **Tests.** Zero spec files in any workspace.
-3. **Infra.** Root `package.json` references `infra/docker/docker-compose.yml`;
-   the `infra/` directory does not exist. No Dockerfiles, no Nginx config, no
-   GitHub Actions workflows.
-4. **Env template.** No `.env.example`, so required config is undocumented
-   outside `src/config/env.schema.ts`.
-5. **Docs.** No README.
-6. **Git.** Not initialized.
+3. **Deployment infra.** `infra/docker/docker-compose.yml` covers local Postgres
+   and Redis only. No application Dockerfiles, no Nginx config, no GitHub Actions
+   workflows.
 
 ## Deviations from the original brief
 

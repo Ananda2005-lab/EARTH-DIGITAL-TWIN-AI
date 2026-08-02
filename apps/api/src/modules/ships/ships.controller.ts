@@ -96,9 +96,7 @@ export class ShipsController {
   @Attribution('UNCTAD · World Port Index')
   @ApiOperation({ summary: 'Seaports from the gazetteer' })
   @ApiOkResponse({ description: 'Ports ranked by TEU throughput' })
-  async seaports(
-    @Query() query: SeaportQueryDto,
-  ): Promise<
+  async seaports(@Query() query: SeaportQueryDto): Promise<
     {
       code: string;
       name: string;

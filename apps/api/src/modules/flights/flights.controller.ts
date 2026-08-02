@@ -66,9 +66,7 @@ export class FlightsController {
   @Attribution('OurAirports')
   @ApiOperation({ summary: 'Airports from the gazetteer' })
   @ApiOkResponse({ description: 'Airports ranked by throughput' })
-  async airports(
-    @Query() query: AirportQueryDto,
-  ): Promise<
+  async airports(@Query() query: AirportQueryDto): Promise<
     {
       icao: string;
       iata: string | null;

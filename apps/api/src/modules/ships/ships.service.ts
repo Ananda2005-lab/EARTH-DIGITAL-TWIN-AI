@@ -81,10 +81,7 @@ export class ShipsService {
   }
 
   /** Container ports from the gazetteer, ranked by throughput. */
-  async seaports(options: {
-    countryCode?: string;
-    limit: number;
-  }): Promise<
+  async seaports(options: { countryCode?: string; limit: number }): Promise<
     {
       code: string;
       name: string;
