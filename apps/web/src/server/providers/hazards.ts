@@ -196,7 +196,7 @@ export async function getWildfires(
     const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${apiKey}/VIIRS_SNPP_NRT/${area}/${days}`;
     const csv = await fetchText(url, { provider: 'NASA FIRMS', revalidate: 900, retries: 1 });
     return parseCsv(csv)
-      .map((row, index) => {
+      .map((row, index): HazardEvent | null => {
         const lat = Number(row.latitude);
         const lng = Number(row.longitude);
         const frp = Number(row.frp);
@@ -214,7 +214,7 @@ export async function getWildfires(
           updatedAt: acquired,
           source: 'NASA FIRMS VIIRS',
           sourceUrl: 'https://firms.modaps.eosdis.nasa.gov/',
-        } satisfies HazardEvent;
+        };
       })
       .filter((e): e is HazardEvent => e !== null)
       .slice(0, limit);
@@ -270,7 +270,7 @@ export async function getGdacsEvents(options: { limit?: number } = {}): Promise<
         retries: 1,
       });
       return (raw.features ?? [])
-        .map((feature) => {
+        .map((feature): HazardEvent | null => {
           const props = feature.properties;
           const kind = GDACS_TYPE_MAP[props.eventtype];
           const coordinates = feature.geometry?.coordinates;
@@ -290,7 +290,7 @@ export async function getGdacsEvents(options: { limit?: number } = {}): Promise<
             updatedAt: props.todate ?? props.fromdate ?? new Date().toISOString(),
             source: 'GDACS (JRC / UN OCHA)',
             sourceUrl: props.url?.report,
-          } satisfies HazardEvent;
+          };
         })
         .filter((e): e is HazardEvent => e !== null)
         .slice(0, limit);
