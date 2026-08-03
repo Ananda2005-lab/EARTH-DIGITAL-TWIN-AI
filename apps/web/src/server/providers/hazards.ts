@@ -352,7 +352,11 @@ export async function getHazardFeed(options: HazardFetchOptions = {}): Promise<H
         return false;
       }
       // De-duplicate the same physical event reported by multiple providers.
-      const bucket = `${event.kind}:${event.location.lat.toFixed(1)}:${event.location.lng.toFixed(1)}:${event.startedAt.slice(0, 13)}`;
+      // Coerced with `Number(...)` because upstream JSON (GDACS in particular)
+      // does not always guarantee numeric types for coordinate fields.
+      const lat = Number(event.location.lat).toFixed(1);
+      const lng = Number(event.location.lng).toFixed(1);
+      const bucket = `${event.kind}:${lat}:${lng}:${event.startedAt.slice(0, 13)}`;
       if (seen.has(bucket)) return false;
       seen.add(bucket);
       return true;
