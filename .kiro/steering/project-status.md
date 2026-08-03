@@ -3,7 +3,7 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-02 · roughly 52% complete_
+_Last verified: 2026-08-03 · roughly 68% complete_
 
 ## Shape of the repo
 
@@ -63,15 +63,30 @@ Foundation:
 - `server/providers/*` — six upstream integrations (countries, weather, hazards,
   flights, maritime, space) with caching, so pages render without the gateway
 
-Routes built (4 of ~40): `/` landing, `/dashboard` Mission Control,
-`/countries`, `/hazards`. Plus `error.tsx`, `not-found.tsx`, `(app)/loading.tsx`.
+Routes built (~23 of ~40): `/`, `/dashboard`, `/countries`, `/countries/[code]`,
+`/hazards`, `/cities`, `/weather`, `/environment`, `/timezones`, `/flights`,
+`/ships`, `/space`, `/ai`, `/analytics`, `/compare`, `/bookmarks`, `/reports`,
+`/workspace`, `/history`, `/notifications`, `/profile`, `/settings`,
+`/timeline`, `/tourism`, `/login`, `/register`, `/globe`. Plus `error.tsx`,
+`not-found.tsx`, `(app)/loading.tsx`.
+
+`/globe` — the 3D digital twin (`components/globe/`) — is built on Three.js /
+react-three-fiber, not MapLibre: a textured sphere, all 177 country borders in
+one draw call, point-in-polygon click/hover picking, an animated fly-to camera,
+and hazard markers colour-coded by severity. Verified with a headless
+Playwright pass (canvas renders, click selects a country and opens the info
+panel, zero console errors) since a clean `next build` doesn't prove a WebGL
+scene actually renders.
+
+Admin sub-pages (12) are not built — `/admin` and its children.
 
 ## Not started
 
-1. **36 remaining routes**, including the 12 admin sub-pages, `/login`,
-   `/register`, and detail routes `/countries/[code]`, `/cities/[id]`.
-2. **The 3D globe.** Nothing rendered yet; the 54-layer catalogue in
-   `@edt/shared` has no renderer behind it. Largest single remaining piece.
+1. **12 admin sub-pages** (`/admin/users`, `/admin/countries`, etc), plus
+   `/forgot-password` (linked from the login form but 404s).
+2. **2D map layers.** The 54-layer catalogue in `@edt/shared` exists as data
+   only; `/globe` renders borders + hazards, not the other ~50 layers
+   (weather, environment, ocean, transport, infrastructure, space).
 3. **Tests.** Zero spec files anywhere.
 4. **CI.** No GitHub Actions workflows. No Nginx config or Dockerfiles for the
    apps (only the local Postgres/Redis compose stack exists).
@@ -97,3 +112,12 @@ Routes built (4 of ~40): `/` landing, `/dashboard` Mission Control,
 - Pages that read live upstream feeds must set `export const dynamic =
   'force-dynamic'`, or `next build` will try to prerender them and hit the
   network.
+- **A passing `next build` does not prove a WebGL/canvas scene renders.**
+  `getHazardFeed`'s dedup logic called `.toFixed()` on coordinates that GDACS
+  sometimes returns as strings, which only threw at runtime on `/globe`
+  (`/hazards` takes a different code path) — `tsc`, ESLint and the production
+  build were all green while the page 500'd. Run the dev server and hit the
+  route, or drive it with Playwright, before trusting a 3D/canvas page.
+- Delegating a broad task to a sub-agent can significantly overshoot the
+  stated scope (asked for 4 pages, got ~23). Review the diff before assuming
+  the scope matches the ask, even if typecheck/lint/build all pass.
