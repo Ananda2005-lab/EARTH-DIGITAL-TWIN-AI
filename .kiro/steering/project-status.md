@@ -3,7 +3,7 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-03 · roughly 68% complete_
+_Last verified: 2026-08-03 · roughly 78% complete_
 
 ## Shape of the repo
 
@@ -78,18 +78,31 @@ Playwright pass (canvas renders, click selects a country and opens the info
 panel, zero console errors) since a clean `next build` doesn't prove a WebGL
 scene actually renders.
 
-Admin sub-pages (12) are not built — `/admin` and its children.
+All 12 admin sub-pages are built: `/admin` (overview KPIs), `/admin/users`,
+`/admin/countries` + `/admin/countries/[code]` (edit form), `/admin/cities`
+(placeholder — no live gazetteer endpoint yet), `/admin/reports`,
+`/admin/analytics`, `/admin/ai-logs`, `/admin/feature-flags`,
+`/admin/notifications` (broadcast composer), `/admin/api-keys` (issue/rotate/
+revoke, one-time secret reveal), `/admin/audit`, `/admin/system` (health,
+maintenance toggle, cache/circuit controls). All wrap their fetch in try/catch
+and fall back to `RequireAuthNotice` on 401/403 rather than crashing when
+there's no session. `/forgot-password` is also built, closing the dead link
+from the login form.
+
+That's 42 routes total, verified with a real `next start` + HTTP fetch pass
+(every route 200s, no Server Components crash) — not just a passing build.
 
 ## Not started
 
-1. **12 admin sub-pages** (`/admin/users`, `/admin/countries`, etc), plus
-   `/forgot-password` (linked from the login form but 404s).
-2. **2D map layers.** The 54-layer catalogue in `@edt/shared` exists as data
+1. **2D map layers.** The 54-layer catalogue in `@edt/shared` exists as data
    only; `/globe` renders borders + hazards, not the other ~50 layers
    (weather, environment, ocean, transport, infrastructure, space).
-3. **Tests.** Zero spec files anywhere.
-4. **CI.** No GitHub Actions workflows. No Nginx config or Dockerfiles for the
+2. **Tests.** Zero spec files anywhere.
+3. **CI.** No GitHub Actions workflows. No Nginx config or Dockerfiles for the
    apps (only the local Postgres/Redis compose stack exists).
+4. **Auth is unverified end-to-end.** Forms exist and typecheck, but no one
+   has run the API against a live Postgres and clicked through
+   register → login → session yet.
 
 ## Deviations from the original brief
 
