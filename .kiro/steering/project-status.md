@@ -94,6 +94,17 @@ lock and stay disabled. Popups render click details from feature properties.
 the shell stays declarative. Verified with a clean build + live dev-server
 fetch of `/map` (200, no runtime errors).
 
+`/countries/[code]` and `/cities/[id]` are now deep detail pages rather than
+thin shells. Both are connected to the 2D map via a reusable `MapEmbed`
+client component (`components/map/map-embed.tsx`) that renders a compact
+non-interactive MapLibre view from the shared basemap catalogue with a marker
+and an "Open in map" link through to `/map`. The country profile now shows the
+country on the map, its curated major cities (linking to `/cities/[id]`), and
+live capital weather via `getWeather`. The city profile shows the city on the
+map, overview facts, live current conditions, and its nearest major airports.
+`/cities/[id]` resolves against `getMajorCities()` and calls `notFound()` for
+unknown ids, mirroring the existing country route.
+
 All 12 admin sub-pages are built: `/admin` (overview KPIs), `/admin/users`,
 `/admin/countries` + `/admin/countries/[code]` (edit form), `/admin/cities`
 (placeholder — no live gazetteer endpoint yet), `/admin/reports`,
@@ -105,7 +116,7 @@ and fall back to `RequireAuthNotice` on 401/403 rather than crashing when
 there's no session. `/forgot-password` is also built, closing the dead link
 from the login form.
 
-That's 42 routes total, verified with a real `next start` + HTTP fetch pass
+That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 (every route 200s, no Server Components crash) — not just a passing build.
 
 ## Not started
@@ -123,8 +134,9 @@ That's 42 routes total, verified with a real `next start` + HTTP fetch pass
    wired into `/map`; weather rasters (temperature, wind, clouds, air quality),
    ocean (SST, currents, wave height), society, infrastructure and space
    layers still need live feeds or operator API keys before they can render.
-2. **Country / city deep pages.** `/countries/[code]` and `/cities` exist but
-   `/cities/[id]` and richer detail views are still thin.
+2. **Live city gazetteer.** `/cities/[id]` renders from the bundled curated
+   list today; wiring the 40k-city gazetteer API would let detail pages serve
+   any city, not just the curated set.
 
 ## Deviations from the original brief
 

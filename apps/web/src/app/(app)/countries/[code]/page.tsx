@@ -1,5 +1,28 @@
-import { formatArea, formatCompact, formatNumber, formatPercent } from '@edt/shared';
-import { ArrowUpRight, ExternalLink, MapPin } from 'lucide-react';
+import {
+  beaufortFor,
+  formatArea,
+  formatCompact,
+  formatNumber,
+  formatPercent,
+  formatTemperature,
+  type WeatherCondition,
+} from '@edt/shared';
+import {
+  ArrowUpRight,
+  Cloud,
+  CloudDrizzle,
+  CloudFog,
+  CloudLightning,
+  CloudRain,
+  Droplets,
+  ExternalLink,
+  MapPin,
+  Snowflake,
+  Sun,
+  Thermometer,
+  Wind,
+  type LucideIcon,
+} from 'lucide-react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -7,10 +30,13 @@ import { notFound } from 'next/navigation';
 
 import { StatCard } from '@/components/data/stat-card';
 import { PageContainer, PageHeader, Section } from '@/components/layout/page-header';
+import { MapEmbed } from '@/components/map/map-embed';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { countryByCode, flagUrl, type CountryReference } from '@/lib/data/countries';
+import { getMajorCities } from '@/server/providers/cities';
 import { getCountry, getWikipediaSummary } from '@/server/providers/countries';
+import { getWeather } from '@/server/providers/open-meteo';
 
 // `getCountry` fetches live World Bank indicators and the Wikipedia summary
 // call hits an external API too, so this profile is rendered per request.
@@ -37,6 +63,12 @@ export default async function CountryDetailPage({ params }: { params: { code: st
   const borders = reference.borders
     .map((code3) => countryByCode(code3))
     .filter((entry): entry is CountryReference => entry !== undefined);
+
+  const [cities, weather] = await Promise.all([
+    getMajorCities(),
+    getWeather(reference.center).catch(() => null),
+  ]);
+  const cityLinks = cities.filter((city) => city.countryCode === reference.code);
 
   return (
     <PageContainer>
@@ -73,6 +105,45 @@ export default async function CountryDetailPage({ params }: { params: { code: st
           </dl>
         </div>
       </Card>
+
+      <div className="mb-8 grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardContent className="p-0">
+            <MapEmbed
+              center={reference.center}
+              zoom={4}
+              label={reference.name}
+              className="h-[280px]"
+            />
+          </CardContent>
+        </Card>
+
+        {cityLinks.length > 0 ? (
+          <Card>
+            <CardContent className="pt-5">
+              <p className="stat-label mb-3">Major cities</p>
+              <div className="flex flex-col gap-1">
+                {cityLinks.map((city) => (
+                  <Link
+                    key={city.id}
+                    href={`/cities/${city.id}`}
+                    className="focus-visible:ring-ring hover:bg-surface-muted group flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none transition-colors focus-visible:ring-2"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm">{city.name}</span>
+                    <span className="numeric text-muted-foreground text-xs">
+                      {formatCompact(city.population)}
+                    </span>
+                    <ArrowUpRight
+                      className="text-muted-foreground group-hover:text-primary size-3.5 shrink-0 transition-colors"
+                      aria-hidden
+                    />
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
+      </div>
 
       {detail ? (
         <Section
@@ -115,6 +186,41 @@ export default async function CountryDetailPage({ params }: { params: { code: st
             <StatCard
               label="Renewable energy"
               value={formatPercent(detail.renewableEnergyPct ?? null)}
+            />
+          </div>
+        </Section>
+      ) : null}
+
+      {weather ? (
+        <Section
+          title="Capital weather"
+          description={`Live conditions near ${reference.capital ?? 'the capital'}.`}
+        >
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              label="Temperature"
+              value={formatTemperature(weather.now.temperature)}
+              icon={<Thermometer />}
+              hint={`Feels like ${formatTemperature(weather.now.apparentTemperature)}`}
+            />
+            <StatCard
+              label="Condition"
+              value={conditionLabel(weather.now.condition)}
+              icon={<WeatherConditionIcon condition={weather.now.condition} />}
+              hint={weather.attribution}
+            />
+            <StatCard
+              label="Wind"
+              value={`${formatNumber(weather.now.windSpeed)} km/h`}
+              icon={<Wind />}
+              hint={`${beaufortFor(weather.now.windSpeed).label} · force ${
+                beaufortFor(weather.now.windSpeed).force
+              }`}
+            />
+            <StatCard
+              label="Humidity"
+              value={formatPercent(weather.now.humidity, 0)}
+              icon={<Droplets />}
             />
           </div>
         </Section>
@@ -247,4 +353,33 @@ function Fact({ label, value }: { label: string; value: string }) {
       <dd className="numeric mt-0.5 text-sm">{value}</dd>
     </div>
   );
+}
+
+const CONDITION_ICON: Record<WeatherCondition, LucideIcon> = {
+  clear: Sun,
+  mostly_clear: Sun,
+  partly_cloudy: Cloud,
+  overcast: Cloud,
+  fog: CloudFog,
+  drizzle: CloudDrizzle,
+  rain: CloudRain,
+  freezing_rain: CloudRain,
+  snow: Snowflake,
+  snow_grains: Snowflake,
+  showers: CloudRain,
+  snow_showers: Snowflake,
+  thunderstorm: CloudLightning,
+  thunderstorm_hail: CloudLightning,
+};
+
+function WeatherConditionIcon({ condition }: { condition: WeatherCondition }) {
+  const Icon = CONDITION_ICON[condition] ?? Cloud;
+  return <Icon aria-hidden />;
+}
+
+function conditionLabel(condition: string): string {
+  return condition
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
