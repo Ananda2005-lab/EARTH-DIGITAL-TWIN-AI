@@ -46,12 +46,25 @@ const VESSEL_COLOR: Record<VesselKind, string> = {
  */
 export const SUPPORTED_DATA_LAYERS = new Set<string>([
   'borders',
+  'graticule',
+  'day_night',
+  'temperature',
   'precipitation',
+  'clouds',
+  'wind',
+  'pressure',
+  'air_quality',
   'earthquakes',
   'wildfires',
   'volcanoes',
   'floods',
   'cyclones',
+  'sst',
+  'wave_height',
+  'sea_ice',
+  'vegetation_ndvi',
+  'snow_cover',
+  'night_luminosity',
   'flights',
   'ships',
   'iss',
@@ -269,6 +282,157 @@ export async function resolveRadarTileTemplate(): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Real-time weather / ocean rasters served by the Open-Meteo map-tiles
+ * gateway. Consumed through MapLibre's `om://` protocol (registered by
+ * `@openmeteo/weather-map-layer`) so tiles decode straight to canvas.
+ */
+export interface OmRasterLayer {
+  /** Full `om://` URL for a plain raster source (renders the model field). */
+  url: string;
+  /** Extra URL kept for the wind arrow vector source (`&arrows=true`). */
+  arrowsUrl?: string;
+  maxzoom: number;
+}
+
+export const OM_RASTER_LAYERS: Record<string, OmRasterLayer> = {
+  temperature: {
+    url: 'https://map-tiles.open-meteo.com/data_spatial/dwd_icon/latest.json?time_step=current_time_1H&variable=temperature_2m',
+    maxzoom: 12,
+  },
+  clouds: {
+    url: 'https://map-tiles.open-meteo.com/data_spatial/dwd_icon/latest.json?time_step=current_time_1H&variable=cloud_cover',
+    maxzoom: 12,
+  },
+  pressure: {
+    url: 'https://map-tiles.open-meteo.com/data_spatial/dwd_icon/latest.json?time_step=current_time_1H&variable=pressure_msl',
+    maxzoom: 12,
+  },
+  air_quality: {
+    url: 'https://map-tiles.open-meteo.com/data_spatial/cams_global/latest.json?time_step=current_time_1H&variable=pm2_5',
+    maxzoom: 8,
+  },
+  wave_height: {
+    url: 'https://map-tiles.open-meteo.com/data_spatial/dwd_gwam/latest.json?time_step=current_time_3H&variable=wave_height',
+    maxzoom: 8,
+  },
+  wind: {
+    url: 'https://map-tiles.open-meteo.com/data_spatial/dwd_icon/latest.json?time_step=current_time_1H&variable=wind_u_component_10m&variable=wind_v_component_10m',
+    maxzoom: 12,
+  },
+};
+
+/** The wind layer additionally renders directional arrows from the vector source. */
+export const WIND_ARROWS_LAYER_ID = 'wind-arrows';
+
+/**
+ * Environmental rasters from the NASA GIBS WMTS (free, no key). GIBS uses the
+ * Google Maps tile scheme with a fixed matrix set per layer; the tile template
+ * keeps `{z}/{y}/{x}` so MapLibre can request them directly.
+ */
+export interface GibsLayer {
+  layer: string;
+  level: number;
+}
+
+export const GIBS_RASTER_LAYERS: Record<string, GibsLayer> = {
+  sst: { layer: 'GHRSST_L4_MUR_Sea_Surface_Temperature', level: 7 },
+  sea_ice: { layer: 'MODIS_Terra_Sea_Ice', level: 7 },
+  snow_cover: { layer: 'MODIS_Terra_L3_NDSI_Snow_Cover_Daily', level: 8 },
+  vegetation_ndvi: { layer: 'MODIS_Terra_NDVI_8Day', level: 9 },
+  night_luminosity: { layer: 'VIIRS_SNPP_DayNightBand', level: 7 },
+};
+
+export function gibsTileUrl(layer: GibsLayer): string {
+  return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer.layer}/default/GoogleMapsCompatible_Level${layer.level}/{z}/{y}/{x}.png`;
+}
+
+/**
+ * Graticule grid — one meridian + one parallel every 10 degrees, drawn as a
+ * thin reference overlay matching the shared catalogue's `graticule` layer.
+ */
+export function graticuleToGeoJson(): GeoJsonFeatureCollection {
+  const features: GeoJsonFeature[] = [];
+  for (let lat = -80; lat <= 80; lat += 10) {
+    const coordinates: [number, number][] = [];
+    for (let lng = -180; lng <= 180; lng += 5) coordinates.push([lng, lat]);
+    features.push({
+      type: 'Feature',
+      id: `graticule:lat:${lat}`,
+      geometry: { type: 'LineString', coordinates },
+      properties: { color: '#475569' },
+    });
+  }
+  for (let lng = -180; lng <= 180; lng += 10) {
+    const coordinates: [number, number][] = [];
+    for (let lat = -90; lat <= 90; lat += 5) coordinates.push([lng, lat]);
+    features.push({
+      type: 'Feature',
+      id: `graticule:lng:${lng}`,
+      geometry: { type: 'LineString', coordinates },
+      properties: { color: '#475569' },
+    });
+  }
+  return collection(features);
+}
+
+/**
+ * Day / night terminator for a given instant. Returns the night-side polygon
+ * (filled) plus the terminator polyline, computed from the solar declination
+ * and the subsolar longitude so the map stays correct across seasons.
+ */
+export function terminatorToGeoJson(date: Date): GeoJsonFeatureCollection {
+  const subsolar = subsolarPoint(date);
+  const declination = subsolar.lat;
+  const subsolarLng = subsolar.lng;
+  const nightPole = declination >= 0 ? -90 : 90;
+
+  const ring: [number, number][] = [];
+  for (let lng = -180; lng <= 180; lng += 3) {
+    const h = (lng - subsolarLng) * (Math.PI / 180);
+    const delta = declination * (Math.PI / 180);
+    const phi = Math.atan((-Math.cos(delta) * Math.cos(h)) / Math.sin(delta)) * (180 / Math.PI);
+    ring.push([lng, Number.isFinite(phi) ? phi : nightPole]);
+  }
+
+  const pole = nightPole;
+  const nightRing: [number, number][] = [...ring, [180, pole], [-180, pole]];
+
+  return {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        id: 'day-night:polygon',
+        geometry: { type: 'Polygon', coordinates: [nightRing] },
+        properties: { color: '#0b1220', fill: true },
+      },
+      {
+        type: 'Feature',
+        id: 'day-night:terminator',
+        geometry: { type: 'LineString', coordinates: ring },
+        properties: { color: '#64748b', fill: false },
+      },
+    ],
+  };
+}
+
+export function subsolarPoint(date: Date): LngLat {
+  const days = (date.getTime() - Date.UTC(2000, 0, 1, 12)) / 86_400_000;
+  const rad = (d: number) => d * (Math.PI / 180);
+  const deg = (r: number) => (r * 180) / Math.PI;
+  const l = (280.46 + 0.9856474 * days) % 360;
+  const g = (357.528 + 0.9856003 * days) % 360;
+  const lambda = (l + 1.915 * Math.sin(rad(g)) + 0.02 * Math.sin(rad(2 * g))) % 360;
+  const epsilon = 23.439 - 0.0000004 * days;
+  const declination = deg(Math.asin(Math.sin(rad(epsilon)) * Math.sin(rad(lambda))));
+  const ra = deg(Math.atan2(Math.cos(rad(epsilon)) * Math.sin(rad(lambda)), Math.cos(rad(lambda))));
+  const gst = (280.46061837 + 360.98564736629 * days) % 360;
+  let lng = ra - gst;
+  lng = ((lng + 540) % 360) - 180;
+  return { lng, lat: declination };
 }
 
 export const DEFAULT_MAP_CENTER: LngLat = { lng: 12.4964, lat: 25.0 };

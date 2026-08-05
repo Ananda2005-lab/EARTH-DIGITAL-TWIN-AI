@@ -18,14 +18,20 @@ import {
   DEFAULT_MAP_CENTER,
   DEFAULT_MAP_ZOOM,
   flightsToGeoJson,
+  gibsTileUrl,
+  GIBS_RASTER_LAYERS,
+  graticuleToGeoJson,
   hazardsForLayer,
   issToGeoJson,
   issTrackToGeoJson,
   layerCounts,
+  OM_RASTER_LAYERS,
   resolveRadarTileTemplate,
   seaportsToGeoJson,
   SUPPORTED_DATA_LAYERS,
+  terminatorToGeoJson,
   vesselsToGeoJson,
+  WIND_ARROWS_LAYER_ID,
   type MapData,
 } from './map-data';
 
@@ -34,7 +40,23 @@ const HAZARD_LAYERS = ['earthquakes', 'wildfires', 'volcanoes', 'floods', 'cyclo
 /** Layers rendered as clickable circles. */
 const POINT_LAYERS = [...HAZARD_LAYERS, 'flights', 'ships', 'iss', 'airports', 'seaports'];
 
-const DEFAULT_ENABLED = new Set<string>(['borders', 'earthquakes']);
+const DEFAULT_ENABLED = new Set<string>(['borders', 'day_night', 'earthquakes']);
+
+let omProtocolReady: Promise<void> | null = null;
+
+/**
+ * Register MapLibre's `om://` protocol from the Open-Meteo weather layer once.
+ * Loaded lazily and in the browser so SSR never touches the worker-backed
+ * decoder.
+ */
+function ensureOmProtocol(): Promise<void> {
+  if (!omProtocolReady) {
+    omProtocolReady = import('@openmeteo/weather-map-layer').then(({ omProtocol }) => {
+      maplibregl.addProtocol('om', omProtocol);
+    });
+  }
+  return omProtocolReady;
+}
 
 export function MapShell({ data }: { data: MapData }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -103,6 +125,7 @@ export function MapShell({ data }: { data: MapData }) {
     }
 
     loadCountryOutlines().then(setOutlines).catch(() => setOutlines([]));
+    void ensureOmProtocol();
 
     return () => {
       map.remove();
@@ -133,22 +156,65 @@ export function MapShell({ data }: { data: MapData }) {
     };
   }, [enabled, radarUrl]);
 
-  // Synchronise sources and layers with the enabled set.
+  // Synchronise sources and layers with the enabled set. Adding sources before
+  // MapLibre has finished parsing the style throws, so wait for style load
+  // first (React StrictMode remounts effects, which races the async style).
   React.useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    for (const layerId of SUPPORTED_DATA_LAYERS) {
-      const shouldShow = enabled.has(layerId);
-      const exists = map.getSource(layerId) !== undefined;
-      if (shouldShow && !exists) addLayer(map, layerId, { data, outlines, radarUrl });
-      if (!shouldShow && exists) removeLayer(map, layerId);
+    let cancelled = false;
+    const applyLayers = () => {
+      if (cancelled) return;
+      for (const layerId of SUPPORTED_DATA_LAYERS) {
+        const shouldShow = enabled.has(layerId);
+        const exists = map.getSource(layerId) !== undefined;
+        if (shouldShow && !exists) addLayer(map, layerId, { data, outlines, radarUrl });
+        if (!shouldShow && exists) removeLayer(map, layerId);
+      }
+    };
+
+    // Raster weather layers stream through the `om://` protocol; the decoder
+    // registers lazily, so wait for it too before requesting tiles.
+    const prepare = (): Promise<void> =>
+      [...enabled].some((id) => id in OM_RASTER_LAYERS)
+        ? ensureOmProtocol().then(() => undefined)
+        : Promise.resolve();
+
+    const run = () => {
+      void prepare().then(() => {
+        if (!cancelled && map.isStyleLoaded()) applyLayers();
+      });
+    };
+
+    if (map.isStyleLoaded()) {
+      run();
+    } else {
+      const onLoad = () => {
+        map.off('load', onLoad);
+        run();
+      };
+      map.on('load', onLoad);
+      return () => {
+        cancelled = true;
+        map.off('load', onLoad);
+      };
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [enabled, outlines, radarUrl, data]);
 
   return (
     <div className="map-shell">
-      <div ref={containerRef} className="absolute inset-0" />
+      {/* MapLibre forces its container to `position: relative !important`, which
+          would collapse an `absolute inset-0` element to zero height. Keep the
+          absolute filler on an outer wrapper and size the map container with
+          height/width instead. */}
+      <div className="absolute inset-0">
+        <div ref={containerRef} className="h-full w-full" />
+      </div>
 
       <MapLayerManager
         basemap={basemap}
@@ -195,6 +261,56 @@ function addLayer(
       });
       break;
     }
+    case 'graticule': {
+      map.addSource('graticule', {
+        type: 'geojson',
+        data: graticuleToGeoJson() as unknown as GeoJSON.GeoJSON,
+      });
+      map.addLayer({
+        id: 'graticule',
+        type: 'line',
+        source: 'graticule',
+        paint: {
+          'line-color': '#64748b',
+          'line-width': 0.5,
+          'line-opacity': 0.35,
+        },
+      });
+      break;
+    }
+    case 'day_night': {
+      map.addSource('day_night', {
+        type: 'geojson',
+        data: terminatorToGeoJson(new Date()) as unknown as GeoJSON.GeoJSON,
+      });
+      const before = map.getLayer('borders') ? 'borders' : undefined;
+      map.addLayer(
+        {
+          id: 'day_night',
+          type: 'fill',
+          source: 'day_night',
+          filter: ['==', ['get', 'fill'], true],
+          paint: { 'fill-color': '#0b1220', 'fill-opacity': 0.3 },
+        },
+        before,
+      );
+      map.addLayer(
+        {
+          id: 'day_night-terminator',
+          type: 'line',
+          source: 'day_night',
+          filter: ['==', ['get', 'fill'], false],
+          paint: {
+            'line-color': '#64748b',
+            'line-width': 1,
+            'line-opacity': 0.7,
+            'line-dasharray': [2, 1.5],
+          },
+        },
+        before,
+      );
+      break;
+    }
     case 'precipitation': {
       if (!radarUrl) return;
       map.addSource('precipitation', {
@@ -208,6 +324,96 @@ function addLayer(
         source: 'precipitation',
         paint: { 'raster-opacity': opacity },
       });
+      break;
+    }
+    case 'wind': {
+      const config = OM_RASTER_LAYERS.wind;
+      if (!config) return;
+      map.addSource('wind', {
+        type: 'raster',
+        url: `om://${config.url}`,
+        maxzoom: config.maxzoom,
+      });
+      map.addLayer({
+        id: 'wind',
+        type: 'raster',
+        source: 'wind',
+        paint: { 'raster-opacity': opacity },
+      });
+      map.addSource(WIND_ARROWS_LAYER_ID, {
+        type: 'vector',
+        url: `om://${config.url}&arrows=true`,
+      });
+      map.addLayer({
+        id: WIND_ARROWS_LAYER_ID,
+        type: 'line',
+        source: WIND_ARROWS_LAYER_ID,
+        'source-layer': WIND_ARROWS_LAYER_ID,
+        layout: { 'line-cap': 'round' },
+        paint: {
+          'line-color': [
+            'case',
+            ['>', ['to-number', ['get', 'value']], 12],
+            'rgba(248,113,113,0.85)',
+            ['>', ['to-number', ['get', 'value']], 8],
+            'rgba(253,224,71,0.8)',
+            'rgba(94,234,212,0.7)',
+          ],
+          'line-width': 1.6,
+        },
+      });
+      break;
+    }
+    default: {
+      const omConfig = OM_RASTER_LAYERS[layerId];
+      if (omConfig) {
+        map.addSource(layerId, {
+          type: 'raster',
+          url: `om://${omConfig.url}`,
+          maxzoom: omConfig.maxzoom,
+        });
+        map.addLayer({
+          id: layerId,
+          type: 'raster',
+          source: layerId,
+          paint: { 'raster-opacity': opacity },
+        });
+        break;
+      }
+      const gibs = GIBS_RASTER_LAYERS[layerId];
+      if (gibs) {
+        map.addSource(layerId, {
+          type: 'raster',
+          tiles: [gibsTileUrl(gibs)],
+          tileSize: 256,
+          maxzoom: gibs.level,
+        });
+        map.addLayer({
+          id: layerId,
+          type: 'raster',
+          source: layerId,
+          paint: { 'raster-opacity': opacity },
+        });
+        break;
+      }
+      if (HAZARD_LAYERS.includes(layerId)) {
+        map.addSource(layerId, {
+          type: 'geojson',
+          data: hazardsForLayer(data.hazards, layerId) as unknown as GeoJSON.GeoJSON,
+        });
+        map.addLayer({
+          id: layerId,
+          type: 'circle',
+          source: layerId,
+          paint: {
+            'circle-color': ['get', 'color'],
+            'circle-radius': ['get', 'radius'],
+            'circle-stroke-width': 1,
+            'circle-stroke-color': 'rgba(2,6,23,0.6)',
+            'circle-opacity': opacity,
+          },
+        });
+      }
       break;
     }
     case 'flights': {
@@ -322,35 +528,18 @@ function addLayer(
       });
       break;
     }
-    default: {
-      if (HAZARD_LAYERS.includes(layerId)) {
-        map.addSource(layerId, {
-          type: 'geojson',
-          data: hazardsForLayer(data.hazards, layerId) as unknown as GeoJSON.GeoJSON,
-        });
-        map.addLayer({
-          id: layerId,
-          type: 'circle',
-          source: layerId,
-          paint: {
-            'circle-color': ['get', 'color'],
-            'circle-radius': ['get', 'radius'],
-            'circle-stroke-width': 1,
-            'circle-stroke-color': 'rgba(2,6,23,0.6)',
-            'circle-opacity': opacity,
-          },
-        });
-      }
-      break;
-    }
   }
 }
 
 function removeLayer(map: maplibregl.Map, layerId: string): void {
-  if (map.getLayer(`${layerId}-track`)) map.removeLayer(`${layerId}-track`);
-  if (map.getLayer(layerId)) map.removeLayer(layerId);
-  if (map.getSource(`${layerId}-track`)) map.removeSource(`${layerId}-track`);
-  if (map.getSource(layerId)) map.removeSource(layerId);
+  const related = new Set<string>([layerId, `${layerId}-track`, `${layerId}-terminator`]);
+  if (layerId === 'wind') related.add(WIND_ARROWS_LAYER_ID);
+  for (const id of related) {
+    if (map.getLayer(id)) map.removeLayer(id);
+  }
+  for (const id of related) {
+    if (map.getSource(id)) map.removeSource(id);
+  }
 }
 
 function popupContent(layerId: string, properties: Record<string, unknown>): string {
