@@ -46,6 +46,16 @@ export const NAV_ITEMS: readonly NavItem[] = [
     badge: 'live',
   },
   {
+    id: 'map',
+    label: '2D Map',
+    href: '/map',
+    icon: 'Map',
+    group: 'explore',
+    description: 'Planar mission view with live hazards, radar, traffic and infrastructure.',
+    shortcut: 'g m',
+    badge: 'live',
+  },
+  {
     id: 'countries',
     label: 'Countries',
     href: '/countries',

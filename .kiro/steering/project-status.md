@@ -3,7 +3,7 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-03 · roughly 78% complete_
+_Last verified: 2026-08-05 · roughly 80% complete_
 
 ## Shape of the repo
 
@@ -63,12 +63,12 @@ Foundation:
 - `server/providers/*` — six upstream integrations (countries, weather, hazards,
   flights, maritime, space) with caching, so pages render without the gateway
 
-Routes built (~23 of ~40): `/`, `/dashboard`, `/countries`, `/countries/[code]`,
+Routes built (~24 of ~40): `/`, `/dashboard`, `/countries`, `/countries/[code]`,
 `/hazards`, `/cities`, `/weather`, `/environment`, `/timezones`, `/flights`,
 `/ships`, `/space`, `/ai`, `/analytics`, `/compare`, `/bookmarks`, `/reports`,
 `/workspace`, `/history`, `/notifications`, `/profile`, `/settings`,
-`/timeline`, `/tourism`, `/login`, `/register`, `/globe`. Plus `error.tsx`,
-`not-found.tsx`, `(app)/loading.tsx`.
+`/timeline`, `/tourism`, `/login`, `/register`, `/globe`, `/map`. Plus
+`error.tsx`, `not-found.tsx`, `(app)/loading.tsx`.
 
 `/globe` — the 3D digital twin (`components/globe/`) — is built on Three.js /
 react-three-fiber, not MapLibre: a textured sphere, all 177 country borders in
@@ -77,6 +77,22 @@ and hazard markers colour-coded by severity. Verified with a headless
 Playwright pass (canvas renders, click selects a country and opens the info
 panel, zero console errors) since a clean `next build` doesn't prove a WebGL
 scene actually renders.
+
+`/map` — the 2D mission view (`components/map/`) — is the first real MapLibre
+GL consumer of the shared `LAYERS` catalogue. It renders the full basemap set
+(satellite, hybrid, terrain, street, midnight, daylight, night lights, ocean)
+plus 12 live data layers wired to the existing providers: political borders
+(Natural Earth 110m), RainViewer radar precipitation (live frame resolved at
+toggle time), the five hazard layers (earthquakes, wildfires, volcanoes,
+floods, cyclones) coloured by severity with depth/magnitude-scaled markers,
+live flights (altitude-tinted ADS-B), ships (AIS), ISS with a dashed ground
+track, and airports/seaports. The layer manager on the right drives basemap
+swaps (via `RasterTileSource.setTiles`, so the style is never rebuilt) and
+per-category toggles with live counts; unsupported catalogue layers show a
+lock and stay disabled. Popups render click details from feature properties.
+`map-data.ts` holds the GeoJSON conversion + RainViewer frame resolution so
+the shell stays declarative. Verified with a clean build + live dev-server
+fetch of `/map` (200, no runtime errors).
 
 All 12 admin sub-pages are built: `/admin` (overview KPIs), `/admin/users`,
 `/admin/countries` + `/admin/countries/[code]` (edit form), `/admin/cities`
@@ -94,15 +110,21 @@ That's 42 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Not started
 
-1. **2D map layers.** The 54-layer catalogue in `@edt/shared` exists as data
-   only; `/globe` renders borders + hazards, not the other ~50 layers
-   (weather, environment, ocean, transport, infrastructure, space).
-2. **Tests.** Zero spec files anywhere.
-3. **CI.** No GitHub Actions workflows. No Nginx config or Dockerfiles for the
+1. **Tests.** Zero spec files anywhere.
+2. **CI.** No GitHub Actions workflows. No Nginx config or Dockerfiles for the
    apps (only the local Postgres/Redis compose stack exists).
-4. **Auth is unverified end-to-end.** Forms exist and typecheck, but no one
+3. **Auth is unverified end-to-end.** Forms exist and typecheck, but no one
    has run the API against a live Postgres and clicked through
    register → login → session yet.
+
+## Next up
+
+1. **Remaining 2D map layers.** The catalogue has ~40 more layers than the 12
+   wired into `/map`; weather rasters (temperature, wind, clouds, air quality),
+   ocean (SST, currents, wave height), society, infrastructure and space
+   layers still need live feeds or operator API keys before they can render.
+2. **Country / city deep pages.** `/countries/[code]` and `/cities` exist but
+   `/cities/[id]` and richer detail views are still thin.
 
 ## Deviations from the original brief
 
