@@ -5,6 +5,50 @@ Update this file whenever a milestone lands.
 
 _Last verified: 2026-08-05 · roughly 82% complete_
 
+## Project goal (original brief)
+
+Build "Earth Digital Twin AI": a web platform that is an interactive digital
+twin of Earth. It combines a 3D globe and a 2D map mission view with live,
+real-time earth data — weather, ocean, hazards, flights, ships, space — plus
+country/city profiles, analytics, admin, AI assistant, and user accounts.
+Technical shape: npm-workspaces monorepo (`@edt/*`), NestJS API
+(`apps/api`), Next.js web app (`apps/web`), shared types/schemas/constants
+(`packages/shared`). Stack chosen over the brief: MapLibre GL + react-three-
+fiber instead of CesiumJS; AI lives in the Nest `ai` module (no FastAPI).
+
+## Remaining work to completion (checklist)
+
+Everything left before the project is done. Tick off as it lands.
+
+1. **Tests** — zero spec files anywhere. Add at least unit tests for
+   `packages/shared` and key API modules, plus a couple of web smoke tests.
+2. **CI + deploy artifacts** — no GitHub Actions workflows; no Dockerfiles or
+   Nginx config for the apps (only local Postgres/Redis compose stack exists).
+3. **Auth end-to-end verification** — forms exist but nobody has run the API
+   against a live Postgres and clicked register → login → session yet.
+4. **More 2D map layers** (~30 left) — society/infrastructure via Esri
+   basemaps; space layers need a TLE feed; ocean currents need a velocity
+   source. Weather + environmental rasters are complete.
+5. **Live 40k-city gazetteer** — `/cities/[id]` still renders from the bundled
+   curated list; wiring the gazetteer API would serve any city.
+6. **Remaining API polish** — API is ~95%; audit the last ~5% (endpoints not
+   yet exercised against live Postgres/Redis).
+
+## Resuming from a fresh session (ops)
+
+- Start with `git submodule update --init --recursive --depth 1` if `.gitmodules`
+  exists (none currently). Branch is `master`; commit conventions are
+  conventional-commit style (`feat(web): …`, `chore: …`), push to
+  `origin/master` directly and verify the push after every milestone.
+- Always `npm run build:shared` first (web consumes `@edt/shared` from `dist/`).
+- Verified green commands: `npm run build:shared`, `build:api`, `build:web`,
+  and per-workspace `lint` + `typecheck` for `@edt/api` and `@edt/web`.
+- Dev servers: web dev server serves on `http://localhost:3000` (check
+  `package.json` scripts for exact commands; web proxies `/api` to the API).
+- After any web/globe/map change, verify at runtime with Playwright against the
+  live dev server, not just `next build` — headless Chromium needs
+  `--use-angle=swiftshader --enable-unsafe-swiftshader` for WebGL compositing.
+
 ## Shape of the repo
 
 npm workspaces monorepo, `@edt/*` scope. Git initialised, branch `master`.
