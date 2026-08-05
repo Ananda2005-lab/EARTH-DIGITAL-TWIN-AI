@@ -3,7 +3,7 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-05 · roughly 80% complete_
+_Last verified: 2026-08-05 · roughly 82% complete_
 
 ## Shape of the repo
 
@@ -13,7 +13,7 @@ npm workspaces monorepo, `@edt/*` scope. Git initialised, branch `master`.
 | ----------------- | ------------- | -------------------------------------------------------------- |
 | `packages/shared` | `@edt/shared` | Done — types, Zod schemas, constants, utils.                   |
 | `apps/api`        | `@edt/api`    | ~95% — 21 controllers, 139 endpoints. Builds, lints, typechecks. |
-| `apps/web`        | `@edt/web`    | ~20% — foundation done, 4 of ~40 routes built.                  |
+| `apps/web`        | `@edt/web`    | ~30% — foundation done, all 43 routes built, `/map` now live.   |
 | `scripts`         | —             | Two gazetteer index builders.                                  |
 | `infra/docker`    | —             | Local Postgres/Redis compose stack.                            |
 
@@ -94,6 +94,40 @@ lock and stay disabled. Popups render click details from feature properties.
 the shell stays declarative. Verified with a clean build + live dev-server
 fetch of `/map` (200, no runtime errors).
 
+**Live weather, ocean and environmental layers landed** (commit `759d7d3`). The
+`/map` layer catalogue now supports 13 more data layers on top of the original
+12, all functional and verified against live sources, not placeholders:
+
+- **Real-time weather rasters** (temperature, cloud cover, pressure, wind, air
+  quality, wave height) via the `@openmeteo/weather-map-layer` `om://` protocol
+  (Open-Meteo map tiles — `dwd_icon`, `cams_global`, `dwd_gwam`). The `om`
+  protocol is registered lazily with `maplibregl.addProtocol('om', …)`.
+- **Wind** additionally renders a dynamic arrow vector layer from wind-u/v.
+- **Environmental rasters** (sea surface temperature, sea ice, snow cover,
+  vegetation NDVI, night luminosity) via NASA GIBS WMTS
+  (`gibs.earthdata.nasa.gov`), keyless. Layer id must be `MODIS_Terra_NDVI_8Day`
+  (`MODIS_Terra_NDVI` alone 404s); snow/sea-ice tiles outside polar coverage
+  legitimately 404 and stay transparent.
+- **Client-generated geometry**: `graticule` (10° meridians/parallels) and
+  `day/night` (terminator fill + dashed line, computed from the subsolar point)
+  are built in `map-data.ts` rather than fetched.
+- Default-enabled layers are now `['borders','day_night','earthquakes']`.
+
+Two pre-existing runtime bugs were found and fixed during verification: (1) the
+"Style is not done loading." crash when layers synced before the style load
+event (layer sync now waits on `'load'` / `isStyleLoaded()`); (2) MapLibre
+forces its container to `position: relative !important`, collapsing an
+`absolute inset-0` wrapper to 0 height — the canvas is now wrapped in
+`<div className="absolute inset-0"><div ref={containerRef} className="h-full w-full" /></div>`.
+
+Verified with a Playwright pass against the live dev server (headless Chromium
+needs `--use-angle=swiftshader` for WebGL compositing): all 17 layer toggles
+succeed with zero console/page errors; `om://` fetches return 200/206 and
+decode; GIBS layers return 200 (150 requests; only sea-ice edge tiles 404);
+RainViewer precipitation returns 200; canvas pixel stats jump from ~6.7k to
+~114k colorful pixels when layers are enabled. `next build`, web typecheck and
+web lint all pass.
+
 `/countries/[code]` and `/cities/[id]` are now deep detail pages rather than
 thin shells. Both are connected to the 2D map via a reusable `MapEmbed`
 client component (`components/map/map-embed.tsx`) that renders a compact
@@ -130,10 +164,11 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Next up
 
-1. **Remaining 2D map layers.** The catalogue has ~40 more layers than the 12
-   wired into `/map`; weather rasters (temperature, wind, clouds, air quality),
-   ocean (SST, currents, wave height), society, infrastructure and space
-   layers still need live feeds or operator API keys before they can render.
+1. **More 2D map layers.** The catalogue still has ~30 layers beyond the ~25
+   wired into `/map`. Society/infrastructure layers (roads, buildings, land
+   use) are best served by the existing Esri basemaps; space layers (satellite
+   tracks, orbits) need a TLE feed; ocean currents need a current velocity
+   source. Weather and environmental raster coverage is now complete.
 2. **Live city gazetteer.** `/cities/[id]` renders from the bundled curated
    list today; wiring the 40k-city gazetteer API would let detail pages serve
    any city, not just the curated set.
@@ -165,6 +200,14 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
   (`/hazards` takes a different code path) — `tsc`, ESLint and the production
   build were all green while the page 500'd. Run the dev server and hit the
   route, or drive it with Playwright, before trusting a 3D/canvas page.
+- **Headless screenshots of WebGL content are flaky unless Chromium is
+  launched with `--use-angle=swiftshader --enable-unsafe-swiftshader`.** Without
+  those flags the map canvas intermittently composites as pure black in
+  Playwright. Add them to any canvas-rendering check.
+- **Read layer labels from the catalogue for UI toggles.** Layer switches are
+  aria-labelled `Toggle <label>` (e.g. `Toggle Live Flights`, `Toggle Rain &
+  Snow`), not the short ids. The panel needs `scrollIntoViewIfNeeded` before
+  clicking since it is a scroll area.
 - Delegating a broad task to a sub-agent can significantly overshoot the
   stated scope (asked for 4 pages, got ~23). Review the diff before assuming
   the scope matches the ask, even if typecheck/lint/build all pass.
