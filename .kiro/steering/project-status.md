@@ -5,6 +5,21 @@ Update this file whenever a milestone lands.
 
 _Last verified: 2026-08-06 · roughly 91% complete_
 
+> **DONE (2026-08-06):** checklist item 3 Phase 3 prep — **stack rebooted in a fresh
+> session** (env installs don't persist between sessions). Postgres 15 + PostGIS +
+> Redis 7 reinstalled via apt (no Docker here), `edt` role/db recreated, `npm ci`
+> re-run, `build:shared` + `prisma:generate` re-run, migration `0001_init`
+> reapplied, seed reconverged (4 users / 250 countries / 210 cities / 6 flags).
+> API boots on `:4000/api/v1` (live DB + Redis), web dev server boots on `:3000`.
+> **Found + fixed a first-boot web bug:** `apps/web/src/lib/env.ts` used
+> `z.string().min(8).optional()`, which rejects `''` values, so copying
+> `.env.example` → `.env.local` verbatim made the `/api/*` reverse proxy 500 on
+> every request ("Invalid server environment: NASA_FIRMS_API_KEY: String must
+> contain at least 8 character(s); …"). Applied the same `optionalString`
+> (`trim → ''→undefined → pipe(min)`) pattern the API uses; `/api/health` now
+> proxies 200 through the web server. Web typecheck green. **Next: Playwright
+> register → login → session pass (Phase 3 proper).**
+>
 > **DONE (2026-08-06):** checklist item 3 "Auth end-to-end verification" — Phase 1
 > landed: **live Postgres 15 + Redis running locally** (no Docker in this
 > environment, so `apt-get` was used instead of `infra/docker` compose), the API
@@ -314,7 +329,9 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Next up
 
-1. **Auth E2E — web UI pass (Phase 3 of checklist item 3).** API side is verified
+1. **Auth E2E — web UI pass (Phase 3 of checklist item 3).** Stack is back up
+   (Postgres/Redis/API/web), `/api` proxy verified 200; run Playwright through
+   register → login → session → logout and the admin role gate. API side is verified
    end-to-end against live Postgres/Redis; the remaining step is starting the web
    dev server (it proxies `/api` to the gateway) and driving register → login →
    session through the browser with Playwright. Then the item-6 API-polish audit
