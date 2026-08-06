@@ -3,17 +3,18 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-05 · roughly 82% complete_
+_Last verified: 2026-08-06 · roughly 84% complete_
 
-> **IN PROGRESS (2026-08-06):** milestone 4 of the completion checklist — "more
-> 2D map layers" (~30 left). Plan: (a) ocean currents via Open-Meteo marine map
-> tiles (dwd_gwam current_velocity, same om:// pattern as wind); (b) space
-> layers via CelesTrak TLE + `satellite.js` SGP4 propagation (satellite tracks /
-> constellations); (c) society/infrastructure rasters via keyless Esri overlay
-> services. Files: `apps/web/src/components/map/map-data.ts`,
-> `apps/web/src/components/map/map-shell.tsx`, `apps/web/package.json`.
-> Nothing implemented yet — this note was written BEFORE the work started, so a
-> fresh session knows the intent even if this session dies mid-way.
+> **DONE (2026-08-06):** milestone 4 of the completion checklist — "more 2D
+> map layers" — shipped as commit `b62e947`. Four new live layers added to
+> `/map`: `ocean_currents` (ECMWF IFS `ocean_u/v_current` via `om://`),
+> `labels` (keyless Esri World_Reference_Overlay raster), `aurora` (NOAA SWPC
+> OVATION oval, split into per-hemisphere dashed polylines) and `satellites`
+> (CelesTrak TLEs propagated with satellite.js SGP4 — ISS/GPS/GLONASS/Galileo,
+> refreshed every minute, clickable with orbit altitude). Verified with
+> Playwright: all four toggles render, zero console errors, om decodes
+> (200/206), esri 60×200, noaa 200, celestrak 4×200. Typecheck, lint and
+> `next build` all pass.
 
 ## Project goal (original brief)
 
@@ -36,9 +37,13 @@ Everything left before the project is done. Tick off as it lands.
    Nginx config for the apps (only local Postgres/Redis compose stack exists).
 3. **Auth end-to-end verification** — forms exist but nobody has run the API
    against a live Postgres and clicked register → login → session yet.
-4. **More 2D map layers** (~30 left) — society/infrastructure via Esri
-   basemaps; space layers need a TLE feed; ocean currents need a velocity
-   source. Weather + environmental rasters are complete.
+4. **More 2D map layers** (~26 left) — wired so far: ocean currents, place
+   labels, aurora, satellites. Remaining candidates need heavier sources:
+   submarine cables (TeleGeography data path on GitHub changed → 404),
+   power grid (OpenInfraMap tiles blocked), population/urban (WorldPop/GHSL,
+   no keyless tiles), transit (OSM/Transitland vector tiles), forest cover /
+   protected areas (GFW/WDPA), timezones (large GeoJSON), lightning (premium),
+   live traffic (key), tsunami, bathymetry.
 5. **Live 40k-city gazetteer** — `/cities/[id]` still renders from the bundled
    curated list; wiring the gazetteer API would serve any city.
 6. **Remaining API polish** — API is ~95%; audit the last ~5% (endpoints not
@@ -67,7 +72,7 @@ npm workspaces monorepo, `@edt/*` scope. Git initialised, branch `master`.
 | ----------------- | ------------- | -------------------------------------------------------------- |
 | `packages/shared` | `@edt/shared` | Done — types, Zod schemas, constants, utils.                   |
 | `apps/api`        | `@edt/api`    | ~95% — 21 controllers, 139 endpoints. Builds, lints, typechecks. |
-| `apps/web`        | `@edt/web`    | ~30% — foundation done, all 43 routes built, `/map` now live.   |
+| `apps/web`        | `@edt/web`    | ~32% — foundation done, all 43 routes built, `/map` now live.   |
 | `scripts`         | —             | Two gazetteer index builders.                                  |
 | `infra/docker`    | —             | Local Postgres/Redis compose stack.                            |
 
@@ -262,6 +267,18 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
   aria-labelled `Toggle <label>` (e.g. `Toggle Live Flights`, `Toggle Rain &
   Snow`), not the short ids. The panel needs `scrollIntoViewIfNeeded` before
   clicking since it is a scroll area.
+- **`satellite.js` must stay on v5, not v7.** v7's ESM build pulls in a WASM
+  runtime that imports `node:module` / `node:worker_threads`, which breaks
+  `next build` (`UnhandledSchemeError`). v5 (`lib/index.js`) is pure JS and
+  ships its own types. Also: `propagate()`'s `.position` is typed
+  `EciVec3 | boolean` where the `true` case is truthy — guard with
+  `typeof position === 'boolean'` before calling `eciToGeodetic`.
+- **Open-Meteo map-tile variable names differ per model, and some models lack
+  whole categories.** Probe `.../latest.json?variable=<x>` and read the
+  returned `variables` array instead of guessing. `dwd_gwam` has waves only;
+  ocean currents live on `ecmwf_ifs025` as `ocean_u_current` /
+  `ocean_v_current`. A wrong variable decodes fine as TileJSON but throws
+  "Variable … not found" at `.om` decode time (visible as console errors).
 - Delegating a broad task to a sub-agent can significantly overshoot the
   stated scope (asked for 4 pages, got ~23). Review the diff before assuming
   the scope matches the ask, even if typecheck/lint/build all pass.
