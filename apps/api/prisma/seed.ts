@@ -137,7 +137,7 @@ function seedUsers(): SeedUser[] {
   return [
     {
       email: (process.env.SEED_OWNER_EMAIL ?? 'owner@earthdigitaltwin.ai').toLowerCase(),
-      password: process.env.SEED_OWNER_PASSWORD ?? DEV_DEFAULT_PASSWORD,
+      password: process.env.SEED_OWNER_PASSWORD || DEV_DEFAULT_PASSWORD,
       name: 'Platform Owner',
       role: 'owner',
       plan: 'enterprise',
@@ -146,7 +146,7 @@ function seedUsers(): SeedUser[] {
     },
     {
       email: (process.env.SEED_ADMIN_EMAIL ?? 'admin@earthdigitaltwin.ai').toLowerCase(),
-      password: process.env.SEED_ADMIN_PASSWORD ?? DEV_DEFAULT_PASSWORD,
+      password: process.env.SEED_ADMIN_PASSWORD || DEV_DEFAULT_PASSWORD,
       name: 'Platform Admin',
       role: 'admin',
       plan: 'enterprise',
@@ -155,7 +155,7 @@ function seedUsers(): SeedUser[] {
     },
     {
       email: (process.env.SEED_ANALYST_EMAIL ?? 'analyst@earthdigitaltwin.ai').toLowerCase(),
-      password: process.env.SEED_ANALYST_PASSWORD ?? DEV_DEFAULT_PASSWORD,
+      password: process.env.SEED_ANALYST_PASSWORD || DEV_DEFAULT_PASSWORD,
       name: 'Senior Analyst',
       role: 'analyst',
       plan: 'team',
@@ -164,7 +164,7 @@ function seedUsers(): SeedUser[] {
     },
     {
       email: (process.env.SEED_DEMO_EMAIL ?? 'demo@earthdigitaltwin.ai').toLowerCase(),
-      password: process.env.SEED_DEMO_PASSWORD ?? DEV_DEFAULT_PASSWORD,
+      password: process.env.SEED_DEMO_PASSWORD || DEV_DEFAULT_PASSWORD,
       name: 'Demo Explorer',
       role: 'user',
       plan: 'pro',

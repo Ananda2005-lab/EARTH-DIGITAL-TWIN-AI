@@ -3,8 +3,28 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-06 · roughly 93% complete_
+_Last verified: 2026-08-06 · roughly 94% complete_
 
+> **DONE (2026-08-06):** checklist item 6 **closed — API polish audit against
+> live Postgres/Redis.** Exercised ~50 of the 115 OpenAPI paths not previously
+> hit against the live stack (user-scoped bookmarks/preferences/workspaces/
+> notifications/reports/ai conversations, all admin pages, search, analytics,
+> environment, ships, space, weather grid/marine/elevation, countries/cities
+> helpers). **Two real bugs found + fixed:** (1) the seed used
+> `SEED_*_PASSWORD ?? DEV_DEFAULT_PASSWORD`, which does NOT fall back on an
+> empty env value — `.env.example` ships `SEED_ADMIN_PASSWORD=` empty, so every
+> seeded account got an empty-string password and login 401'd (switched to
+> `||`; doc already claimed passwords default when blank); (2) `hazards` 500'd
+> with `TypeError: reading 'toFixed'` of undefined on `/stats` and `/nearby`
+> — GDACS serves coordinates as a comma-joined `"lng,lat"` string (or omits
+> latitude), so `coordinates[1]` was undefined (added `parseCoordinates()`
+> handling string/nested/array forms + a finite-coordinate guard in the dedup
+> bucket). Everything else in the audit was either my wrong test params
+> (indicator codes are World Bank codes like `NY.GDP.MKTP.CD`; grid `resolution`
+> is an integer 2–12 degrees) or intended role guards (`/admin/system` needs
+> owner, `/analytics/correlation` is role-gated). Post-fix: every audited path
+> 200 with valid params. API typecheck + lint + 33 tests green.
+>
 > **DONE (2026-08-06):** checklist item 5 **closed — live city gazetteer wired
 > end-to-end.** Previously `/cities` and `/cities/[id]` rendered only from a
 > bundled ~41-city curated list. The gazetteer API (Prisma/Postgres-backed,
@@ -176,8 +196,11 @@ Everything left before the project is done. Tick off as it lands.
    (Open-Meteo geocoding fallback) render, curated list remains the offline
    fallback. The full ~40k-city expansion still waits on Wikidata SPARQL
    (`build-city-index.mjs`) or a keyed source.
-6. **Remaining API polish** — API is ~95%; audit the last ~5% (endpoints not
-   yet exercised against live Postgres/Redis).
+6. ~~**Remaining API polish**~~ — **DONE** (commit `…`): ~50 previously
+   unexercised endpoints audited against live Postgres/Redis; two real bugs
+   fixed (seed password `??`→`||` empty-value fallback, GDACS coordinate
+   parsing in hazards) and the rest were test-param/role-guard artifacts.
+   All 115 OpenAPI paths now return expected statuses with valid params.
 
 ## Resuming from a fresh session (ops)
 
@@ -389,14 +412,15 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Next up
 
-1. ~~**Live city gazetteer.**~~ **DONE** — web wired to the gazetteer API; 210
-   seeded capitals with real populations. Full ~40k expansion blocked on
-   Wikidata SPARQL availability.
+1. ~~**Remaining API polish.**~~ **DONE** — ~50 endpoints audited, two real bugs
+   fixed (seed password fallback, GDACS coords), all 115 paths respond as
+   expected.
 2. **More 2D map layers.** Remaining catalogue layers need heavier sources
    (submarine cables, power grid, population rasters, timezones, live traffic
-   — most keyed/premium or blocked upstream); lower priority than auth.
-3. **Remaining API polish.** API is ~95%; audit the last ~5% (endpoints not yet
-   exercised against live Postgres/Redis) now that the stack is fully up.
+   — most keyed/premium or blocked upstream).
+3. **~40k-city gazetteer expansion.** Web is wired to the gazetteer API; the DB
+   holds 210 capitals. Expanding to the full set waits on Wikidata SPARQL
+   availability (or a keyed source) via `npm run build:city-index`.
 
 ## Deviations from the original brief
 
