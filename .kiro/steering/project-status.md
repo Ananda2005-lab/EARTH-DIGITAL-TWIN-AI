@@ -3,8 +3,18 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-06 · roughly 91% complete_
+_Last verified: 2026-08-06 · roughly 92% complete_
 
+> **DONE (2026-08-06):** checklist item 3 **closed — browser session works end-to-end.**
+> The last open finding from the web UI pass is fixed: the API now mirrors the
+> short-lived access token into an HttpOnly `edt_access` cookie alongside
+> `edt_refresh` (register / login / refresh / OAuth complete all set it, logout
+> clears both). The JWT strategy already read `edt_access`, so `/auth/me` and
+> every user-scoped endpoint now authenticate from the browser. Re-ran the
+> Playwright pass: **9/9 green** including `browser /auth/me 200 via access
+> cookie` (was the 401 finding). Logout still clears both cookies and `/auth/me`
+> 401s after. API typecheck + 33 tests green. Checklist item 3 fully ticked.
+>
 > **DONE (2026-08-06):** checklist item 3 Phase 3 — **web UI auth pass via Playwright
 > (9/9 checks)** against the live stack. Register → dashboard, `edt_refresh`
 > HttpOnly cookie set, cookie-based `/auth/refresh` rotates tokens, admin page
@@ -122,13 +132,12 @@ Everything left before the project is done. Tick off as it lands.
 2. ~~**CI + deploy artifacts**~~ — DONE (`4abb379`): GitHub Actions workflow,
    Dockerfiles for both apps, nginx reverse proxy, prod compose stack. Not
    build-tested here (no Docker CLI in this environment).
-3. **Auth end-to-end verification** — **API side DONE** (commits `3303bef` +
-   `a47d1b9`): live Postgres 15 + Redis running locally, seed fixed and
-   converging (4 users / 250 countries / 210 cities / 6 flags), four first-boot
-   bugs fixed (env.schema optionalString, ZodValidationPipe @Optional, header
-   versioning default, token jti/jwtid), and register → login → me → refresh →
-   logout → role guard all verified via HTTP. Remaining: click through the web
-   UI (register → login → session) with Playwright — web app not yet started.
+3. ~~**Auth end-to-end verification**~~ — **DONE** (commits `3303bef`, `a47d1b9`,
+   `5fedcd3`): live Postgres 15 + Redis, seed converging, four first-boot bugs
+   fixed, register → login → me → refresh → logout → role guard verified via
+   HTTP, and the web UI pass (Playwright 9/9) confirmed register → login →
+   session through the browser. Access token now mirrors into an `edt_access`
+   cookie so user-scoped endpoints work from the browser.
 4. **More 2D map layers** (~26 left) — wired so far: ocean currents, place
    labels, aurora, satellites. Remaining candidates need heavier sources:
    submarine cables (TeleGeography data path on GitHub changed → 404),
@@ -350,20 +359,14 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Next up
 
-1. **Fix browser-side auth session (finding from the web UI pass).** The web
-   client discards the `AuthSession` access token and only the refresh cookie is
-   set, so `/auth/me` and every user-scoped endpoint 401 from the browser. The
-   API's JWT strategy already reads an `edt_access` cookie, so the smallest fix
-   is setting it alongside the refresh cookie in `auth.controller.ts`
-   (`setRefreshCookie` → also set access cookie), which makes the existing
-   cookie-based flow work end-to-end without touching the client. Re-verify with
-   the Playwright pass (expect `/auth/me` 200 after login).
-2. **Live city gazetteer.** `/cities/[id]` renders from the bundled curated
+1. **Live city gazetteer.** `/cities/[id]` renders from the bundled curated
    list today; wiring the 40k-city gazetteer API would let detail pages serve
    any city, not just the curated set.
-3. **More 2D map layers.** Remaining catalogue layers need heavier sources
+2. **More 2D map layers.** Remaining catalogue layers need heavier sources
    (submarine cables, power grid, population rasters, timezones, live traffic
    — most keyed/premium or blocked upstream); lower priority than auth.
+3. **Remaining API polish.** API is ~95%; audit the last ~5% (endpoints not yet
+   exercised against live Postgres/Redis) now that the stack is fully up.
 
 ## Deviations from the original brief
 
