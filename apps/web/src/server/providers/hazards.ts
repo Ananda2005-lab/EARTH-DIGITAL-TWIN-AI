@@ -340,6 +340,7 @@ export async function getHazardFeed(options: HazardFetchOptions = {}): Promise<H
 
   const results = await Promise.all(tasks);
   const seen = new Set<string>();
+  const seenIds = new Set<string>();
   let events = results
     .flat()
     .filter((event) => {
@@ -351,6 +352,10 @@ export async function getHazardFeed(options: HazardFetchOptions = {}): Promise<H
       ) {
         return false;
       }
+      // A provider returning the same eventid twice would produce duplicate
+      // React keys downstream, so hard-dedupe on the canonical id first.
+      if (seenIds.has(event.id)) return false;
+      seenIds.add(event.id);
       // De-duplicate the same physical event reported by multiple providers.
       // Coerced with `Number(...)` because upstream JSON (GDACS in particular)
       // does not always guarantee numeric types for coordinate fields.

@@ -5,6 +5,27 @@ Update this file whenever a milestone lands.
 
 _Last verified: 2026-08-06 · roughly 91% complete_
 
+> **DONE (2026-08-06):** checklist item 3 Phase 3 — **web UI auth pass via Playwright
+> (9/9 checks)** against the live stack. Register → dashboard, `edt_refresh`
+> HttpOnly cookie set, cookie-based `/auth/refresh` rotates tokens, admin page
+> shows "Sign in required" gate for a plain user, logout 204 clears session,
+> wrong password shows the error banner, correct login → dashboard. **Two bugs
+> found + fixed:** (1) the `/api/*` reverse proxy forwarded the upstream's
+> `content-encoding: br`/`content-length` after undici had already decoded the
+> body, so every brotli response 500'd in the browser with
+> `ERR_CONTENT_DECODING_FAILED` (login/register silently broke once the API
+> compressed; now the proxy strips both headers); (2) `getHazardFeed`'s
+> dedup bucketed by `kind:lat:lng:time`, letting the same GDACS event through
+> twice and tripping React's duplicate-key warning on `/dashboard` (hard-dedupes
+> on `event.id` first). **Open finding (not yet fixed):** the web client never
+> persists the access token — `login`/`register` receive `AuthSession` but
+> discard it, and only `edt_refresh` is set. The JWT strategy already accepts an
+> `edt_access` cookie (jwt.strategy.ts:27), so user-scoped endpoints (`/auth/me`,
+> `/admin/*` data, `/profile`, bookmarks) 401 from the browser. Admin pages
+> degrade gracefully to `RequireAuthNotice`. Fix candidates: set `edt_access`
+> cookie server-side alongside refresh, or persist + re-attach the token
+> client-side. Web typecheck + lint green.
+>
 > **DONE (2026-08-06):** checklist item 3 Phase 3 prep — **stack rebooted in a fresh
 > session** (env installs don't persist between sessions). Postgres 15 + PostGIS +
 > Redis 7 reinstalled via apt (no Docker here), `edt` role/db recreated, `npm ci`
@@ -329,13 +350,14 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Next up
 
-1. **Auth E2E — web UI pass (Phase 3 of checklist item 3).** Stack is back up
-   (Postgres/Redis/API/web), `/api` proxy verified 200; run Playwright through
-   register → login → session → logout and the admin role gate. API side is verified
-   end-to-end against live Postgres/Redis; the remaining step is starting the web
-   dev server (it proxies `/api` to the gateway) and driving register → login →
-   session through the browser with Playwright. Then the item-6 API-polish audit
-   can lean on the running stack.
+1. **Fix browser-side auth session (finding from the web UI pass).** The web
+   client discards the `AuthSession` access token and only the refresh cookie is
+   set, so `/auth/me` and every user-scoped endpoint 401 from the browser. The
+   API's JWT strategy already reads an `edt_access` cookie, so the smallest fix
+   is setting it alongside the refresh cookie in `auth.controller.ts`
+   (`setRefreshCookie` → also set access cookie), which makes the existing
+   cookie-based flow work end-to-end without touching the client. Re-verify with
+   the Playwright pass (expect `/auth/me` 200 after login).
 2. **Live city gazetteer.** `/cities/[id]` renders from the bundled curated
    list today; wiring the 40k-city gazetteer API would let detail pages serve
    any city, not just the curated set.

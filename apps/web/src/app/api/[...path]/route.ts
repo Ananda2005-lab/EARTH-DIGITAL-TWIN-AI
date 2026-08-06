@@ -77,9 +77,14 @@ async function proxy(request: NextRequest, segments: string[]): Promise<Response
 
   const responseHeaders = new Headers();
   upstream.headers.forEach((value, name) => {
-    if (HOP_BY_HOP.has(name.toLowerCase())) return;
+    const lower = name.toLowerCase();
+    // `fetch` (undici) already decompressed the body, so the upstream's
+    // content-encoding/content-length no longer describe the bytes we forward
+    // and would make the browser fail with ERR_CONTENT_DECODING_FAILED.
+    if (HOP_BY_HOP.has(lower)) return;
+    if (lower === 'content-encoding' || lower === 'content-length') return;
     // `set-cookie` has to be appended so multiple cookies survive the hop.
-    if (name.toLowerCase() === 'set-cookie') responseHeaders.append(name, value);
+    if (lower === 'set-cookie') responseHeaders.append(name, value);
     else responseHeaders.set(name, value);
   });
 
