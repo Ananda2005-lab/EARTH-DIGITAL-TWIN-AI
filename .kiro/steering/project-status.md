@@ -5,18 +5,20 @@ Update this file whenever a milestone lands.
 
 _Last verified: 2026-08-06 · roughly 90% complete_
 
-> **DONE (2026-08-06):** milestone 5 of the completion checklist — "Tests" —
-> shipped as commit `5a627eb`. The repo went from zero spec files to 168 passing
-> tests across all three workspaces (116 shared / 33 API / 19 web). Shared got a
-> vitest setup (`packages/shared/vitest.config.ts` + `test` script) with unit
-> tests for `geo`, `color`, `format`, `scales` and the zod schemas (`common`,
-> `auth`). API got Jest specs for `crypto.util`, `totp.util` (RFC 4226 HOTP +
-> RFC 6238 vectors), `pagination` and a mocked-dependency `HealthController`
-> suite. Web got a `vitest.config.ts` (jsdom, automatic JSX, `@/` alias), a
-> jest-dom setup file, `lib/api/client` unit tests (envelope unwrap, `buildQuery`,
-> `ApiError`, `apiMaybe`, `describeError`) and a `Badge`/`LiveBadge` render test.
-> CI now runs `npm run test --workspaces --if-present`. Verified: all tests,
-> lint, typecheck and both `build:api` / `build:web` pass.
+> **DONE (2026-08-06):** checklist item 3 "Auth end-to-end verification" — Phase 1
+> landed: **live Postgres 15 + Redis running locally** (no Docker in this
+> environment, so `apt-get` was used instead of `infra/docker` compose), the API
+> `.env` was generated with random JWT/MFA secrets + seed passwords, Prisma
+> migration `0001_init` applied cleanly, and the **seed script was fixed** — it
+> defined `seedUsers`/`seedFeatureFlags` but had **no entry point and no
+> country/city seeding**, so it silently ran nothing (0 rows). Added
+> `seedCountries` (upserts 250 countries from `country-reference.json`, clamps
+> negative `areaKm2` for the DB `countries_area_check` constraint, derives
+> `flagSvgUrl` from flagcdn), `seedCities` (210 capital cities derived from the
+> country reference since `city-reference.json` is absent), and a `main()` entry
+> point. Seed now converges: 4 users, 250 countries, 210 cities, 6 feature
+> flags. API typecheck 0 errors, lint clean, 33 tests pass. Auth E2E through
+> register → login → session still to be driven (Phase 2/3).
 
 ## Project goal (original brief)
 

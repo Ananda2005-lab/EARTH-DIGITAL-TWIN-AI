@@ -297,3 +297,193 @@ async function seedFeatureFlags(ownerId: string): Promise<void> {
   }
   console.log(`  ${FEATURE_FLAGS.length} feature flags`);
 }
+
+// ── Countries ────────────────────────────────────────────────────────────────
+
+async function seedCountries(): Promise<Map<string, string>> {
+  const references = readJson<CountryReference[]>(COUNTRY_FILE);
+  if (!references) {
+    throw new Error(
+      `Missing ${COUNTRY_FILE} — run scripts/build-country-index.mjs first`,
+    );
+  }
+
+  const idByCode = new Map<string, string>();
+
+  for (const reference of references) {
+    const continent = CONTINENT_BY_LABEL[reference.continent];
+    if (!continent) {
+      console.log(`  skip country ${reference.code}: unknown continent "${reference.continent}"`);
+      continue;
+    }
+
+    const record = await prisma.country.upsert({
+      where: { code: reference.code },
+      create: {
+        code: reference.code,
+        code3: reference.code3,
+        numeric: reference.numeric,
+        name: reference.name,
+        officialName: reference.officialName,
+        continent,
+        region: reference.region,
+        subregion: reference.subregion,
+        capital: reference.capital,
+        population: BigInt(Math.max(0, reference.population ?? 0)),
+        populationYear: reference.populationYear,
+        areaKm2: Math.max(0, reference.areaKm2),
+        flagEmoji: reference.flagEmoji,
+        lng: reference.center.lng,
+        lat: reference.center.lat,
+        capitalLng: reference.capitalCenter?.lng ?? null,
+        capitalLat: reference.capitalCenter?.lat ?? null,
+        currencies: (reference.currencies ?? []) as unknown as Prisma.InputJsonValue,
+        languages: (reference.languages ?? []) as unknown as Prisma.InputJsonValue,
+        callingCodes: reference.callingCodes ?? [],
+        tld: reference.tld ?? [],
+        independent: reference.independent ?? true,
+        unMember: reference.unMember ?? true,
+        landlocked: reference.landlocked ?? false,
+        borders: reference.borders ?? [],
+        demonym: reference.demonym,
+        incomeGroup: reference.incomeGroup,
+        altSpellings: reference.altSpellings ?? [],
+        flagSvgUrl: `https://flagcdn.com/${reference.code.toLowerCase()}.svg`,
+      },
+      update: {
+        code3: reference.code3,
+        name: reference.name,
+        officialName: reference.officialName,
+        continent,
+        region: reference.region,
+        subregion: reference.subregion,
+        capital: reference.capital,
+        population: BigInt(Math.max(0, reference.population ?? 0)),
+        populationYear: reference.populationYear,
+        areaKm2: Math.max(0, reference.areaKm2),
+        capitalLng: reference.capitalCenter?.lng ?? null,
+        capitalLat: reference.capitalCenter?.lat ?? null,
+      },
+      select: { id: true },
+    });
+
+    idByCode.set(reference.code, record.id);
+  }
+
+  console.log(`  ${idByCode.size} countries`);
+  return idByCode;
+}
+
+// ── Cities ───────────────────────────────────────────────────────────────────
+
+async function seedCities(idByCode: Map<string, string>): Promise<void> {
+  const references = readJson<CityReference[]>(CITY_FILE);
+  const cities: CityReference[] = [];
+
+  if (references) {
+    cities.push(...references);
+  } else {
+    // No city file: derive a capital city per country from the country reference
+    // so the gazetteer is never empty.
+    const countries = readJson<CountryReference[]>(COUNTRY_FILE);
+    for (const country of countries ?? []) {
+      if (!country.capital || !country.capitalCenter) continue;
+      cities.push({
+        name: country.capital,
+        asciiName: asciiFold(country.capital),
+        countryCode: country.code,
+        center: country.capitalCenter,
+        lng: country.capitalCenter.lng,
+        lat: country.capitalCenter.lat,
+        isCapital: true,
+      });
+    }
+  }
+
+  const seen = new Set<string>();
+  let inserted = 0;
+
+  for (const city of cities) {
+    const countryId = idByCode.get(city.countryCode);
+    if (!countryId) {
+      console.log(`  skip city ${city.name}: no seeded country ${city.countryCode}`);
+      continue;
+    }
+
+    const lng = clampLng(city.center?.lng ?? city.lng ?? 0);
+    const lat = clampLat(city.center?.lat ?? city.lat ?? 0);
+    const slug = slugify(city.asciiName ?? city.name);
+    const key = `${city.countryCode}:${slug}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    await prisma.city.upsert({
+      where: { countryCode_slug: { countryCode: city.countryCode, slug } },
+      create: {
+        geonameId: city.geonameId,
+        countryId,
+        countryCode: city.countryCode,
+        name: city.name,
+        asciiName: city.asciiName ?? asciiFold(city.name),
+        slug,
+        admin1: city.admin1,
+        admin2: city.admin2,
+        population: city.population ?? 0,
+        lng,
+        lat,
+        elevationM: city.elevationM,
+        timezone: city.timezone ?? 'UTC',
+        isCapital: city.isCapital ?? false,
+        metroPopulation: city.metroPopulation,
+      },
+      update: {
+        name: city.name,
+        asciiName: city.asciiName ?? asciiFold(city.name),
+        admin1: city.admin1,
+        admin2: city.admin2,
+        population: city.population ?? 0,
+        lng,
+        lat,
+        elevationM: city.elevationM,
+        timezone: city.timezone ?? 'UTC',
+        isCapital: city.isCapital ?? false,
+        metroPopulation: city.metroPopulation,
+      },
+    });
+
+    inserted += 1;
+  }
+
+  console.log(`  ${inserted} cities`);
+}
+
+// ── Entry point ──────────────────────────────────────────────────────────────
+
+async function main(): Promise<void> {
+  console.log('Seeding Earth Digital Twin database…');
+
+  console.log('Accounts:');
+  const ids = await seedAccounts();
+
+  console.log('Countries:');
+  const idByCode = await seedCountries();
+
+  console.log('Cities:');
+  await seedCities(idByCode);
+
+  console.log('Feature flags:');
+  const ownerId = ids['owner'];
+  if (!ownerId) throw new Error('seedAccounts did not return an owner user id');
+  await seedFeatureFlags(ownerId);
+
+  console.log('Seed complete.');
+}
+
+main()
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
