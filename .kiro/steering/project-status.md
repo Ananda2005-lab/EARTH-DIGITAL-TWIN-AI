@@ -5,6 +5,16 @@ Update this file whenever a milestone lands.
 
 _Last verified: 2026-08-05 · roughly 82% complete_
 
+> **IN PROGRESS (2026-08-06):** milestone 4 of the completion checklist — "more
+> 2D map layers" (~30 left). Plan: (a) ocean currents via Open-Meteo marine map
+> tiles (dwd_gwam current_velocity, same om:// pattern as wind); (b) space
+> layers via CelesTrak TLE + `satellite.js` SGP4 propagation (satellite tracks /
+> constellations); (c) society/infrastructure rasters via keyless Esri overlay
+> services. Files: `apps/web/src/components/map/map-data.ts`,
+> `apps/web/src/components/map/map-shell.tsx`, `apps/web/package.json`.
+> Nothing implemented yet — this note was written BEFORE the work started, so a
+> fresh session knows the intent even if this session dies mid-way.
+
 ## Project goal (original brief)
 
 Build "Earth Digital Twin AI": a web platform that is an interactive digital
