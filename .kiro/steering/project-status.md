@@ -3,7 +3,7 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-06 · roughly 90% complete_
+_Last verified: 2026-08-06 · roughly 91% complete_
 
 > **DONE (2026-08-06):** checklist item 3 "Auth end-to-end verification" — Phase 1
 > landed: **live Postgres 15 + Redis running locally** (no Docker in this
@@ -19,6 +19,26 @@ _Last verified: 2026-08-06 · roughly 90% complete_
 > point. Seed now converges: 4 users, 250 countries, 210 cities, 6 feature
 > flags. API typecheck 0 errors, lint clean, 33 tests pass. Auth E2E through
 > register → login → session still to be driven (Phase 2/3).
+>
+> **Phase 2 (commit `a47d1b9`): API verified against live Postgres/Redis.**
+> First real boot of the API surfaced and fixed **four first-boot bugs**:
+> (1) `env.schema.ts` `optionalString` rejected empty values from
+> `.env.example`, so copying the example verbatim crashed boot (now transforms
+> `''` → `undefined` before the `min(1)` pipe); (2) `ZodValidationPipe`'s
+> optional constructor param was typed as an interface and Nest treated it as an
+> injectable token — "Nest can't resolve dependencies" (marked `@Optional()`);
+> (3) HEADER versioning in `main.ts` required `x-api-version` even though
+> `defaultVersion: '1'` was set — Nest only falls back to the default for
+> `VERSION_NEUTRAL`, so every curl/web request 404'd (added a middleware that
+> defaults the header to `1`); (4) `token.service.ts` `mint()` put `jti` in the
+> payload AND passed `jwtid` to `signAsync`, which jsonwebtoken rejects
+> ("Bad options.jwtid") — dropped the option. After fixes, the full flow works
+> against live Postgres: register 201 (fresh email `e2e2@test.dev`, session
+> tokens returned, refresh cookie set HttpOnly+SameSite=Lax), login 200,
+> `/auth/me` 200 with Bearer, `/auth/refresh` 200 via cookie, logout 204, wrong
+> password 401, seeded admin login 200, `/admin/overview` 200 for admin but 403
+> for a plain user (role guard works), `/cities` returns live DB rows. 33 API
+> tests, lint, typecheck all still green.
 
 ## Project goal (original brief)
 
@@ -66,8 +86,13 @@ Everything left before the project is done. Tick off as it lands.
 2. ~~**CI + deploy artifacts**~~ — DONE (`4abb379`): GitHub Actions workflow,
    Dockerfiles for both apps, nginx reverse proxy, prod compose stack. Not
    build-tested here (no Docker CLI in this environment).
-3. **Auth end-to-end verification** — forms exist but nobody has run the API
-   against a live Postgres and clicked register → login → session yet.
+3. **Auth end-to-end verification** — **API side DONE** (commits `3303bef` +
+   `a47d1b9`): live Postgres 15 + Redis running locally, seed fixed and
+   converging (4 users / 250 countries / 210 cities / 6 flags), four first-boot
+   bugs fixed (env.schema optionalString, ZodValidationPipe @Optional, header
+   versioning default, token jti/jwtid), and register → login → me → refresh →
+   logout → role guard all verified via HTTP. Remaining: click through the web
+   UI (register → login → session) with Playwright — web app not yet started.
 4. **More 2D map layers** (~26 left) — wired so far: ocean currents, place
    labels, aurora, satellites. Remaining candidates need heavier sources:
    submarine cables (TeleGeography data path on GitHub changed → 404),
@@ -289,10 +314,11 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Next up
 
-1. **Auth end-to-end verification** (checklist item 3, now the top open item).
-   No one has run the API against a live Postgres/Redis and clicked through
-   register → login → session. Needs `infra/docker` compose up + a Playwright
-   pass, then the remaining API-polish audit (item 6) can lean on it.
+1. **Auth E2E — web UI pass (Phase 3 of checklist item 3).** API side is verified
+   end-to-end against live Postgres/Redis; the remaining step is starting the web
+   dev server (it proxies `/api` to the gateway) and driving register → login →
+   session through the browser with Playwright. Then the item-6 API-polish audit
+   can lean on the running stack.
 2. **Live city gazetteer.** `/cities/[id]` renders from the bundled curated
    list today; wiring the 40k-city gazetteer API would let detail pages serve
    any city, not just the curated set.
