@@ -60,6 +60,11 @@ Everything left before the project is done. Tick off as it lands.
   and per-workspace `lint` + `typecheck` for `@edt/api` and `@edt/web`.
 - Dev servers: web dev server serves on `http://localhost:3000` (check
   `package.json` scripts for exact commands; web proxies `/api` to the API).
+- **After starting the web dev server, run `npm run prewarm --workspace @edt/web`.**
+  Next dev compiles each route on first request (3–6s per first click); prewarm
+  requests every route once so section clicks open in ~0.5s. Needs re-running
+  after a dev-server restart. (Map page flight load is capped at 500 — OpenSky
+  is the slowest upstream.)
 - After any web/globe/map change, verify at runtime with Playwright against the
   live dev server, not just `next build` — headless Chromium needs
   `--use-angle=swiftshader --enable-unsafe-swiftshader` for WebGL compositing.
