@@ -46,6 +46,7 @@ const VESSEL_COLOR: Record<VesselKind, string> = {
  */
 export const SUPPORTED_DATA_LAYERS = new Set<string>([
   'borders',
+  'labels',
   'graticule',
   'day_night',
   'temperature',
@@ -62,9 +63,12 @@ export const SUPPORTED_DATA_LAYERS = new Set<string>([
   'sst',
   'wave_height',
   'sea_ice',
+  'ocean_currents',
   'vegetation_ndvi',
   'snow_cover',
   'night_luminosity',
+  'aurora',
+  'satellites',
   'flights',
   'ships',
   'iss',
@@ -318,6 +322,10 @@ export const OM_RASTER_LAYERS: Record<string, OmRasterLayer> = {
     url: 'https://map-tiles.open-meteo.com/data_spatial/dwd_gwam/latest.json?time_step=current_time_3H&variable=wave_height',
     maxzoom: 8,
   },
+  ocean_currents: {
+    url: 'https://map-tiles.open-meteo.com/data_spatial/ecmwf_ifs025/latest.json?time_step=current_time_3H&variable=ocean_u_current&variable=ocean_v_current',
+    maxzoom: 8,
+  },
   wind: {
     url: 'https://map-tiles.open-meteo.com/data_spatial/dwd_icon/latest.json?time_step=current_time_1H&variable=wind_u_component_10m&variable=wind_v_component_10m',
     maxzoom: 12,
@@ -347,6 +355,147 @@ export const GIBS_RASTER_LAYERS: Record<string, GibsLayer> = {
 
 export function gibsTileUrl(layer: GibsLayer): string {
   return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer.layer}/default/GoogleMapsCompatible_Level${layer.level}/{z}/{y}/{x}.png`;
+}
+
+/**
+ * Keyless Esri reference overlays that sit on top of the imagery basemaps
+ * (transparent PNG tiles, same host as the existing basemap catalogue).
+ */
+export interface EsriRasterLayer {
+  url: string;
+  maxzoom: number;
+}
+
+export const ESRI_RASTER_LAYERS: Record<string, EsriRasterLayer> = {
+  labels: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Reference_Overlay/MapServer/tile/{z}/{y}/{x}',
+    maxzoom: 12,
+  },
+};
+
+/**
+ * Latest NOAA SWPC OVATION auroral oval. The feed returns the oval boundary as
+ * a `[longitude, latitude, probability]` sequence covering both poles; it is
+ * split into per-hemisphere rings wherever consecutive points jump, so each
+ * oval renders as its own dashed polyline.
+ */
+export async function fetchAuroraGeoJson(): Promise<GeoJsonFeatureCollection> {
+  try {
+    const response = await fetch('https://services.swpc.noaa.gov/json/ovation_aurora_latest.json');
+    if (!response.ok) return collection([]);
+    const data = (await response.json()) as {
+      coordinates?: [number, number, number][];
+      'Observation Time'?: string;
+    };
+    const points = (data.coordinates ?? [])
+      .map(([lng, lat]) => [lng, lat] as [number, number])
+      .filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat));
+    const rings = splitRings(points);
+    return collection(
+      rings.map((ring, index) => ({
+        type: 'Feature' as const,
+        id: `aurora:${index}`,
+        geometry: { type: 'LineString', coordinates: ring },
+        properties: { color: '#4ade80', time: data['Observation Time'] },
+      })),
+    );
+  } catch {
+    return collection([]);
+  }
+}
+
+function splitRings(coords: [number, number][]): [number, number][][] {
+  const rings: [number, number][][] = [];
+  let current: [number, number][] = [];
+  for (const point of coords) {
+    const previous = current[current.length - 1];
+    if (previous) {
+      const jump =
+        Math.abs(point[0] - previous[0]) > 40 || Math.abs(point[1] - previous[1]) > 40;
+      if (jump && current.length > 3) {
+        rings.push(current);
+        current = [];
+      }
+    }
+    current.push(point);
+  }
+  if (current.length > 3) rings.push(current);
+  return rings;
+}
+
+/**
+ * Live satellite ground positions propagated from CelesTrak TLEs with SGP4
+ * (satellite.js). A curated set of operator groups keeps the payload small
+ * while still covering ISS, GPS, GLONASS and Galileo.
+ */
+export interface SatellitePoint {
+  name: string;
+  norad: string;
+  position: LngLat;
+  altitudeKm: number;
+}
+
+const SATELLITE_GROUPS = ['stations', 'gps', 'glonass', 'galileo'] as const;
+
+export async function fetchSatellitePositions(): Promise<SatellitePoint[]> {
+  const entries: { name: string; line1: string; line2: string }[] = [];
+  await Promise.all(
+    SATELLITE_GROUPS.map(async (group) => {
+      try {
+        const response = await fetch(
+          `https://celestrak.org/NORAD/elements/gp.php?GROUP=${group}&FORMAT=3le`,
+        );
+        if (!response.ok) return;
+        const lines = (await response.text())
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean);
+        for (let index = 0; index + 2 < lines.length; index += 3) {
+          entries.push({ name: lines[index]!, line1: lines[index + 1]!, line2: lines[index + 2]! });
+        }
+      } catch {
+        // A failing group is skipped; the rest still render.
+      }
+    }),
+  );
+  if (entries.length === 0) return [];
+
+  const { twoline2satrec, propagate, gstime, eciToGeodetic } = await import('satellite.js');
+  const now = new Date();
+  const gmst = gstime(now);
+  const toDegrees = (radians: number) => (radians * 180) / Math.PI;
+
+  return entries.flatMap(({ name, line1, line2 }) => {
+    const satrec = twoline2satrec(line1, line2);
+    const state = propagate(satrec, now);
+    const position = state.position;
+    if (typeof position === 'boolean') return [];
+    const geodetic = eciToGeodetic(position, gmst);
+    if (!geodetic) return [];
+    const latitude = toDegrees(geodetic.latitude);
+    const longitude = toDegrees(geodetic.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
+    return [
+      {
+        name,
+        norad: line1.slice(2, 7),
+        position: { lng: longitude, lat: latitude },
+        altitudeKm: geodetic.height,
+      },
+    ];
+  });
+}
+
+export function satellitesToGeoJson(points: SatellitePoint[]): GeoJsonFeatureCollection {
+  return collection(
+    points.map((satellite) =>
+      pointFeature(satellite.norad, satellite.position, {
+        name: satellite.name,
+        color: '#c4b5fd',
+        altitudeKm: Math.round(satellite.altitudeKm),
+      }),
+    ),
+  );
 }
 
 /**

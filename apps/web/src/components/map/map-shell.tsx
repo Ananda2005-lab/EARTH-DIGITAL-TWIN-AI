@@ -17,6 +17,9 @@ import {
   bordersToGeoJson,
   DEFAULT_MAP_CENTER,
   DEFAULT_MAP_ZOOM,
+  ESRI_RASTER_LAYERS,
+  fetchAuroraGeoJson,
+  fetchSatellitePositions,
   flightsToGeoJson,
   gibsTileUrl,
   GIBS_RASTER_LAYERS,
@@ -27,18 +30,28 @@ import {
   layerCounts,
   OM_RASTER_LAYERS,
   resolveRadarTileTemplate,
+  satellitesToGeoJson,
   seaportsToGeoJson,
   SUPPORTED_DATA_LAYERS,
   terminatorToGeoJson,
   vesselsToGeoJson,
   WIND_ARROWS_LAYER_ID,
+  type GeoJsonFeatureCollection,
   type MapData,
 } from './map-data';
 
 const HAZARD_LAYERS = ['earthquakes', 'wildfires', 'volcanoes', 'floods', 'cyclones'];
 
 /** Layers rendered as clickable circles. */
-const POINT_LAYERS = [...HAZARD_LAYERS, 'flights', 'ships', 'iss', 'airports', 'seaports'];
+const POINT_LAYERS = [
+  ...HAZARD_LAYERS,
+  'flights',
+  'ships',
+  'iss',
+  'satellites',
+  'airports',
+  'seaports',
+];
 
 const DEFAULT_ENABLED = new Set<string>(['borders', 'day_night', 'earthquakes']);
 
@@ -65,6 +78,8 @@ export function MapShell({ data }: { data: MapData }) {
   const [enabled, setEnabled] = React.useState<Set<string>>(DEFAULT_ENABLED);
   const [outlines, setOutlines] = React.useState<CountryOutline[]>([]);
   const [radarUrl, setRadarUrl] = React.useState<string | null>(null);
+  const [aurora, setAurora] = React.useState<GeoJsonFeatureCollection | null>(null);
+  const [satellites, setSatellites] = React.useState<GeoJsonFeatureCollection | null>(null);
 
   const basemapDefinition = getBasemap(basemap) ?? getBasemap('satellite')!;
   const counts = React.useMemo(() => layerCounts(data), [data]);
@@ -156,6 +171,36 @@ export function MapShell({ data }: { data: MapData }) {
     };
   }, [enabled, radarUrl]);
 
+  // Fetch the NOAA SWPC auroral oval once the layer is enabled.
+  React.useEffect(() => {
+    if (!enabled.has('aurora') || aurora !== null) return;
+    let cancelled = false;
+    fetchAuroraGeoJson().then((data) => {
+      if (!cancelled) setAurora(data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, aurora]);
+
+  // Propagate TLEs to the current instant while the satellites layer is on,
+  // refreshing every minute so positions track their orbits.
+  React.useEffect(() => {
+    if (!enabled.has('satellites')) return;
+    let cancelled = false;
+    const refresh = () => {
+      fetchSatellitePositions().then((points) => {
+        if (!cancelled) setSatellites(satellitesToGeoJson(points));
+      });
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [enabled]);
+
   // Synchronise sources and layers with the enabled set. Adding sources before
   // MapLibre has finished parsing the style throws, so wait for style load
   // first (React StrictMode remounts effects, which races the async style).
@@ -164,12 +209,18 @@ export function MapShell({ data }: { data: MapData }) {
     if (!map) return;
 
     let cancelled = false;
+    const context: LayerContext = { data, outlines, radarUrl, aurora, satellites };
     const applyLayers = () => {
       if (cancelled) return;
       for (const layerId of SUPPORTED_DATA_LAYERS) {
         const shouldShow = enabled.has(layerId);
         const exists = map.getSource(layerId) !== undefined;
-        if (shouldShow && !exists) addLayer(map, layerId, { data, outlines, radarUrl });
+        if (shouldShow && !exists) addLayer(map, layerId, context);
+        if (shouldShow && exists && (layerId === 'aurora' || layerId === 'satellites')) {
+          const source = map.getSource(layerId) as maplibregl.GeoJSONSource | undefined;
+          const dataForLayer = layerId === 'aurora' ? context.aurora : context.satellites;
+          if (source && dataForLayer) source.setData(dataForLayer as unknown as GeoJSON.GeoJSON);
+        }
         if (!shouldShow && exists) removeLayer(map, layerId);
       }
     };
@@ -204,7 +255,7 @@ export function MapShell({ data }: { data: MapData }) {
     return () => {
       cancelled = true;
     };
-  }, [enabled, outlines, radarUrl, data]);
+  }, [enabled, outlines, radarUrl, data, aurora, satellites]);
 
   return (
     <div className="map-shell">
@@ -235,12 +286,14 @@ interface LayerContext {
   data: MapData;
   outlines: CountryOutline[];
   radarUrl: string | null;
+  aurora: GeoJsonFeatureCollection | null;
+  satellites: GeoJsonFeatureCollection | null;
 }
 
 function addLayer(
   map: maplibregl.Map,
   layerId: string,
-  { data, outlines, radarUrl }: LayerContext,
+  { data, outlines, radarUrl, aurora, satellites }: LayerContext,
 ): void {
   const definition = getLayer(layerId);
   const opacity = definition?.opacity ?? 1;
@@ -396,6 +449,22 @@ function addLayer(
         });
         break;
       }
+      const esri = ESRI_RASTER_LAYERS[layerId];
+      if (esri) {
+        map.addSource(layerId, {
+          type: 'raster',
+          tiles: [esri.url],
+          tileSize: 256,
+          maxzoom: esri.maxzoom,
+        });
+        map.addLayer({
+          id: layerId,
+          type: 'raster',
+          source: layerId,
+          paint: { 'raster-opacity': opacity },
+        });
+        break;
+      }
       if (HAZARD_LAYERS.includes(layerId)) {
         map.addSource(layerId, {
           type: 'geojson',
@@ -490,6 +559,45 @@ function addLayer(
       }
       break;
     }
+    case 'aurora': {
+      if (!aurora) return;
+      map.addSource('aurora', {
+        type: 'geojson',
+        data: aurora as unknown as GeoJSON.GeoJSON,
+      });
+      map.addLayer({
+        id: 'aurora',
+        type: 'line',
+        source: 'aurora',
+        paint: {
+          'line-color': '#4ade80',
+          'line-width': 1.6,
+          'line-opacity': 0.8,
+          'line-dasharray': [3, 2],
+        },
+      });
+      break;
+    }
+    case 'satellites': {
+      if (!satellites) return;
+      map.addSource('satellites', {
+        type: 'geojson',
+        data: satellites as unknown as GeoJSON.GeoJSON,
+      });
+      map.addLayer({
+        id: 'satellites',
+        type: 'circle',
+        source: 'satellites',
+        paint: {
+          'circle-color': ['get', 'color'],
+          'circle-radius': 3,
+          'circle-stroke-width': 1,
+          'circle-stroke-color': 'rgba(2,6,23,0.6)',
+          'circle-opacity': opacity,
+        },
+      });
+      break;
+    }
     case 'airports': {
       map.addSource('airports', {
         type: 'geojson',
@@ -562,6 +670,8 @@ function popupContent(layerId: string, properties: Record<string, unknown>): str
     rows.push(['Altitude', formatDistance(Number(properties.altitude))]);
   if (properties.velocity !== null && properties.velocity !== undefined)
     rows.push(['Speed', formatSpeed(Number(properties.velocity), 'metric')]);
+  if (properties.altitudeKm !== undefined)
+    rows.push(['Orbit altitude', `${Number(properties.altitudeKm).toLocaleString()} km`]);
   if (properties.heading !== null && properties.heading !== undefined)
     rows.push(['Heading', `${Number(properties.heading).toFixed(0)}°`]);
   if (properties.origin) rows.push(['Origin', String(properties.origin)]);
