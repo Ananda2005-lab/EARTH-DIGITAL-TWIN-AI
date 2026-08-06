@@ -1,11 +1,16 @@
 /**
- * There is no live city gazetteer API yet (see project-status.md). This module
- * ships a small, curated list of major world cities so `/cities` has something
- * real to render while the full 40k-city gazetteer is built out.
+ * City gazetteer provider.
  *
- * Population figures are metro-area approximations, rounded to the nearest
- * 100k. Coordinates are city-center points, WGS84.
+ * The live source is the gazetteer API (Postgres-backed, ~210 capital cities
+ * seeded from country + Open-Meteo geocoding data). Pages call the API through
+ * the same-origin `/api` proxy and fall back to the small bundled curated list
+ * when the gateway is unreachable, so city pages never 500 while the stack is
+ * down.
  */
+
+import type { CityDetail, CitySummary, PaginatedResult } from '@edt/shared';
+
+import { api } from '@/lib/api/client';
 
 export interface CityLite {
   id: string;
@@ -15,6 +20,25 @@ export interface CityLite {
   center: { lng: number; lat: number };
 }
 
+/** DB-compatible slug: matches the seed's `slugify(asciiName)` per country. */
+function nameSlug(name: string): string {
+  return (
+    name
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 72) || 'place'
+  );
+}
+
+/** Stable web id: `<name-slug>-<country-code-lower>`. Round-trips to by-slug. */
+function webId(summary: Pick<CitySummary, 'asciiName' | 'name' | 'countryCode'>): string {
+  return `${nameSlug(summary.asciiName || summary.name)}-${summary.countryCode.toLowerCase()}`;
+}
+
+/** Everything the curated list used to provide, kept as an offline fallback. */
 const RAW_CITIES: readonly [
   name: string,
   countryCode: string,
@@ -66,13 +90,7 @@ const RAW_CITIES: readonly [
 ];
 
 function slugify(name: string, countryCode: string): string {
-  const namePart = name
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return `${namePart}-${countryCode.toLowerCase()}`;
+  return `${nameSlug(name)}-${countryCode.toLowerCase()}`;
 }
 
 const MAJOR_CITIES: readonly CityLite[] = RAW_CITIES.map(
@@ -88,4 +106,64 @@ const MAJOR_CITIES: readonly CityLite[] = RAW_CITIES.map(
 /** Curated list of ~40 major world cities, sorted by population descending. */
 export async function getMajorCities(): Promise<CityLite[]> {
   return [...MAJOR_CITIES].sort((a, b) => b.population - a.population);
+}
+
+/**
+ * Top cities from the live gazetteer API. Falls back to the curated list when
+ * the gateway is unreachable so `/cities` still renders offline.
+ */
+export async function getGazetteerCities(): Promise<CityLite[]> {
+  const results: CitySummary[] = [];
+  try {
+    let page = 1;
+    // The schema caps pageSize at 200; walk pages until the seed set is covered.
+    for (;;) {
+      const batch = await api<PaginatedResult<CitySummary>>('/cities', {
+        query: { page, pageSize: 200, sortBy: 'population', sortDir: 'desc' },
+        revalidate: 86_400,
+      });
+      results.push(...batch.items);
+      if (!batch.hasNext || results.length >= 500) break;
+      page += 1;
+    }
+  } catch {
+    return getMajorCities();
+  }
+  if (results.length === 0) return getMajorCities();
+  return results.map((entry) => ({
+    id: webId(entry),
+    name: entry.name,
+    countryCode: entry.countryCode,
+    population: entry.population,
+    center: entry.center,
+  }));
+}
+
+/**
+ * Resolve a web slug id (`tokyo-jp`) against the live gazetteer. Falls back to
+ * the curated list so the bundled majors keep working when the API is down.
+ */
+export async function getCityByIdentifier(id: string): Promise<CityLite | null> {
+  const match = /^(.+)-([a-z]{2})$/.exec(id);
+  const slug = match?.[1];
+  const countryCode = match?.[2];
+  if (slug && countryCode) {
+    try {
+      const detail = await api<CityDetail>(
+        `/cities/by-slug/${countryCode.toUpperCase()}/${slug}`,
+        { revalidate: 86_400 },
+      );
+      return {
+        id,
+        name: detail.name,
+        countryCode: detail.countryCode,
+        population: detail.population,
+        center: detail.center,
+      };
+    } catch {
+      // 404 or gateway down — fall through to the curated lookup.
+    }
+  }
+  const curated = await getMajorCities();
+  return curated.find((entry) => entry.id === id) ?? null;
 }

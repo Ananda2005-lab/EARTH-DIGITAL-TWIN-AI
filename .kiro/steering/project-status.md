@@ -3,8 +3,33 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-06 · roughly 92% complete_
+_Last verified: 2026-08-06 · roughly 93% complete_
 
+> **DONE (2026-08-06):** checklist item 5 **closed — live city gazetteer wired
+> end-to-end.** Previously `/cities` and `/cities/[id]` rendered only from a
+> bundled ~41-city curated list. The gazetteer API (Prisma/Postgres-backed,
+> `GET /cities`, `by-slug/:countryCode/:slug`) was already built but the web
+> never called it, and the seeded capitals had `population: 0` because
+> `city-reference.json` was absent (the seed fell back to deriving capitals
+> from the country reference). Fixed both: (1) **data** — Wikidata SPARQL
+> (`build-city-index.mjs`) is down (504/timeout), so a new keyless fallback
+> builder `scripts/build-city-index-openmeteo.mjs` resolves all 210 capital
+> cities via the Open-Meteo geocoding API (the API's existing attribution
+> source) and writes `city-reference.json` in the seed's exact shape; reseed
+> now converges with **205/210 capitals carrying real populations** (Paris
+> 2.1M). (2) **web wiring** — `server/providers/cities.ts` gained
+> `getGazetteerCities()` (pages through the `/api` proxy, curated list as
+> offline fallback) and `getCityByIdentifier()` (round-trips the `tokyo-jp`
+> web slug to `by-slug/JP/tokyo`, falls back to curated on 404/gateway-down).
+> `/cities` list now shows all **210 seeded capitals** (was 41), `/cities/[id]`
+> serves any seeded city with live population, and unknown ids render the
+> not-found boundary. Verified against the live stack (Postgres 15 + PostGIS +
+> Redis 7 reinstalled this session, migration reapplied, reseeded): list 200
+> with 210 tiles incl. Ottawa/Canberra, Paris detail 200 with `2.1M` people,
+> unknown id → 404 content. Web typecheck + lint green. Remaining: the full
+> 40k-city gazetteer still depends on Wikidata coming back up (or a keyed
+> source); the two `build-city-index*` scripts document both paths.
+>
 > **DONE (2026-08-06):** checklist item 3 **closed — browser session works end-to-end.**
 > The last open finding from the web UI pass is fixed: the API now mirrors the
 > short-lived access token into an HttpOnly `edt_access` cookie alongside
@@ -145,8 +170,12 @@ Everything left before the project is done. Tick off as it lands.
    no keyless tiles), transit (OSM/Transitland vector tiles), forest cover /
    protected areas (GFW/WDPA), timezones (large GeoJSON), lightning (premium),
    live traffic (key), tsunami, bathymetry.
-5. **Live 40k-city gazetteer** — `/cities/[id]` still renders from the bundled
-   curated list; wiring the gazetteer API would serve any city.
+5. ~~**Live 40k-city gazetteer**~~ — `/cities/[id]` was rendering from the bundled
+   curated list; now **DONE** (commit `…`): the web tier calls the gazetteer API
+   via `/api` (list + `by-slug`), all 210 seeded capitals with real populations
+   (Open-Meteo geocoding fallback) render, curated list remains the offline
+   fallback. The full ~40k-city expansion still waits on Wikidata SPARQL
+   (`build-city-index.mjs`) or a keyed source.
 6. **Remaining API polish** — API is ~95%; audit the last ~5% (endpoints not
    yet exercised against live Postgres/Redis).
 
@@ -305,8 +334,9 @@ and an "Open in map" link through to `/map`. The country profile now shows the
 country on the map, its curated major cities (linking to `/cities/[id]`), and
 live capital weather via `getWeather`. The city profile shows the city on the
 map, overview facts, live current conditions, and its nearest major airports.
-`/cities/[id]` resolves against `getMajorCities()` and calls `notFound()` for
-unknown ids, mirroring the existing country route.
+`/cities/[id]` resolves any seeded city against the live gazetteer API
+(`getCityByIdentifier` → `by-slug`) and calls `notFound()` for unknown ids,
+mirroring the existing country route.
 
 All 12 admin sub-pages are built: `/admin` (overview KPIs), `/admin/users`,
 `/admin/countries` + `/admin/countries/[code]` (edit form), `/admin/cities`
@@ -359,9 +389,9 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Next up
 
-1. **Live city gazetteer.** `/cities/[id]` renders from the bundled curated
-   list today; wiring the 40k-city gazetteer API would let detail pages serve
-   any city, not just the curated set.
+1. ~~**Live city gazetteer.**~~ **DONE** — web wired to the gazetteer API; 210
+   seeded capitals with real populations. Full ~40k expansion blocked on
+   Wikidata SPARQL availability.
 2. **More 2D map layers.** Remaining catalogue layers need heavier sources
    (submarine cables, power grid, population rasters, timezones, live traffic
    — most keyed/premium or blocked upstream); lower priority than auth.
@@ -430,6 +460,14 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
   ocean currents live on `ecmwf_ifs025` as `ocean_u_current` /
   `ocean_v_current`. A wrong variable decodes fine as TileJSON but throws
   "Variable … not found" at `.om` decode time (visible as console errors).
+- **Wikidata SPARQL is unreliable from this environment** (frequent 504 / query
+  timeouts). The 40k-city gazetteer builder (`build-city-index.mjs`) depends on
+  it; the keyless fallback `build-city-index-openmeteo.mjs` derives the 210
+  capital cities via the Open-Meteo geocoding API instead (same source the API
+  already attributes). Both write `apps/web/src/lib/data/city-reference.json`,
+  which the Prisma seed reads if present — rerun `npm run build:city-index`
+  (Wikidata) or `build:city-index:openmeteo`, then `npm run db:seed`, to refresh
+  city populations.
 - Delegating a broad task to a sub-agent can significantly overshoot the
   stated scope (asked for 4 pages, got ~23). Review the diff before assuming
   the scope matches the ask, even if typecheck/lint/build all pass.

@@ -35,7 +35,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { countryByCode } from '@/lib/data/countries';
-import { getMajorCities } from '@/server/providers/cities';
+import { getCityByIdentifier } from '@/server/providers/cities';
 import { findNearestAirports } from '@/server/providers/flights';
 import { getWeather } from '@/server/providers/open-meteo';
 
@@ -67,8 +67,7 @@ function conditionLabel(condition: string): string {
 }
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const cities = await getMajorCities();
-  const city = cities.find((entry) => entry.id === params.id);
+  const city = await getCityByIdentifier(params.id);
   if (!city) return { title: 'City not found' };
   return {
     title: city.name,
@@ -77,8 +76,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 export default async function CityDetailPage({ params }: { params: { id: string } }) {
-  const cities = await getMajorCities();
-  const city = cities.find((entry) => entry.id === params.id);
+  const city = await getCityByIdentifier(params.id);
   if (!city) notFound();
 
   const country = countryByCode(city.countryCode);

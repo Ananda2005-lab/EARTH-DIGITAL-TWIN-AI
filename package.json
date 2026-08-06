@@ -30,6 +30,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,yml,yaml}\"",
     "db:migrate": "npm run db:migrate --workspace @edt/api",
     "db:seed": "npm run db:seed --workspace @edt/api",
+    "build:city-index": "node scripts/build-city-index.mjs",
+    "build:city-index:openmeteo": "node scripts/build-city-index-openmeteo.mjs",
     "docker:up": "docker compose -f infra/docker/docker-compose.yml up -d",
     "docker:down": "docker compose -f infra/docker/docker-compose.yml down"
   },

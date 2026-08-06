@@ -3,26 +3,25 @@ import type { Metadata } from 'next';
 import { CitySearch } from '@/components/cities/city-search';
 import { PageContainer, PageHeader } from '@/components/layout/page-header';
 import { Badge } from '@/components/ui/badge';
-import { getMajorCities } from '@/server/providers/cities';
+import { getGazetteerCities } from '@/server/providers/cities';
 
 export const metadata: Metadata = {
   title: 'Cities',
-  description:
-    'Urban intelligence starting with the world\u2019s major cities, while the full 40,000-city gazetteer comes online.',
+  description: 'The live urban gazetteer — capital cities with real population data.',
 };
 
-// Backed entirely by the bundled curated dataset, so this renders statically.
+// Backed by the gazetteer API through the /api proxy, cached for a day.
 export const revalidate = 86_400;
 
 export default async function CitiesPage() {
-  const cities = await getMajorCities();
+  const cities = await getGazetteerCities();
 
   return (
     <PageContainer>
       <PageHeader
         eyebrow={<Badge variant="primary">{cities.length} cities</Badge>}
         title="Cities"
-        description="A curated set of major world cities, ordered by population. The full gazetteer of 40,000 cities is coming soon."
+        description="The live gazetteer of capital cities, ordered by population. Search resolves against the gazetteer API."
       />
 
       <CitySearch cities={cities} />
