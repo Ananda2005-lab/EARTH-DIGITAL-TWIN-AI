@@ -1,0 +1,9 @@
+# Heavy, generated and platform-specific files are never part of a Docker
+# build context (everything below is produced inside the image).
+**/node_modules
+**/dist
+**/.next
+**/coverage
+**/*.log
+.git
+.github
