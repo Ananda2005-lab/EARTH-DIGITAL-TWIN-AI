@@ -7,7 +7,7 @@ on:
 
 jobs:
   verify:
-    name: Lint, typecheck and build
+    name: Lint, typecheck, test and build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -36,6 +36,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Test
+        run: npm run test --workspaces --if-present
 
       - name: Build apps
         run: npm run build

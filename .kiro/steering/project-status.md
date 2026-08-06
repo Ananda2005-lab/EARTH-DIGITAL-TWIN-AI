@@ -3,18 +3,20 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-06 · roughly 87% complete_
+_Last verified: 2026-08-06 · roughly 90% complete_
 
-> **DONE (2026-08-06):** milestone 4 of the completion checklist — "more 2D
-> map layers" — shipped as commit `b62e947`. Four new live layers added to
-> `/map`: `ocean_currents` (ECMWF IFS `ocean_u/v_current` via `om://`),
-> `labels` (keyless Esri World_Reference_Overlay raster), `aurora` (NOAA SWPC
-> OVATION oval, split into per-hemisphere dashed polylines) and `satellites`
-> (CelesTrak TLEs propagated with satellite.js SGP4 — ISS/GPS/GLONASS/Galileo,
-> refreshed every minute, clickable with orbit altitude). Verified with
-> Playwright: all four toggles render, zero console errors, om decodes
-> (200/206), esri 60×200, noaa 200, celestrak 4×200. Typecheck, lint and
-> `next build` all pass.
+> **DONE (2026-08-06):** milestone 5 of the completion checklist — "Tests" —
+> shipped as commit `ac77c2d`. The repo went from zero spec files to 168 passing
+> tests across all three workspaces (116 shared / 33 API / 19 web). Shared got a
+> vitest setup (`packages/shared/vitest.config.ts` + `test` script) with unit
+> tests for `geo`, `color`, `format`, `scales` and the zod schemas (`common`,
+> `auth`). API got Jest specs for `crypto.util`, `totp.util` (RFC 4226 HOTP +
+> RFC 6238 vectors), `pagination` and a mocked-dependency `HealthController`
+> suite. Web got a `vitest.config.ts` (jsdom, automatic JSX, `@/` alias), a
+> jest-dom setup file, `lib/api/client` unit tests (envelope unwrap, `buildQuery`,
+> `ApiError`, `apiMaybe`, `describeError`) and a `Badge`/`LiveBadge` render test.
+> CI now runs `npm run test --workspaces --if-present`. Verified: all tests,
+> lint, typecheck and both `build:api` / `build:web` pass.
 
 ## Project goal (original brief)
 
@@ -56,8 +58,9 @@ connection strings. Also note: premium catalogue layers (`lightning`,
 
 Everything left before the project is done. Tick off as it lands.
 
-1. **Tests** — zero spec files anywhere. Add at least unit tests for
-   `packages/shared` and key API modules, plus a couple of web smoke tests.
+1. ~~**Tests**~~ — DONE (`ac77c2d`): 168 tests across all three workspaces —
+   shared (utils + zod schemas, vitest), API (crypto/totp/pagination/health,
+   Jest), web (api client + Badge, vitest+jsdom). CI now runs the test step.
 2. ~~**CI + deploy artifacts**~~ — DONE (`4abb379`): GitHub Actions workflow,
    Dockerfiles for both apps, nginx reverse proxy, prod compose stack. Not
    build-tested here (no Docker CLI in this environment).
@@ -119,7 +122,11 @@ npm run lint      --workspace @edt/api    # 0 errors, 0 warnings
 npm run typecheck --workspace @edt/api
 npm run lint      --workspace @edt/web    # next lint, clean
 npm run typecheck --workspace @edt/web
+npm run test      --workspaces --if-present   # 168 tests across shared/api/web
 ```
+
+`npm run prisma:generate --workspace @edt/api` must run before `build:api` /
+API `typecheck` after a fresh `npm ci` (no postinstall hook — see gotchas).
 
 Nothing has been exercised against a live Postgres or Redis yet, and the dev
 server has not been run end-to-end.
@@ -245,15 +252,25 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Not started
 
-1. **Tests.** Zero spec files anywhere. CI does not run a test step yet —
-   add one (`npm run test --workspaces --if-present`) once specs exist, since
-   the web `vitest run` currently fails with "no test files found".
-2. **Auth is unverified end-to-end.** Forms exist and typecheck, but no one
+1. **Auth is unverified end-to-end.** Forms exist and typecheck, but no one
    has run the API against a live Postgres and clicked through
    register → login → session yet.
 
 ## Done since the last checkpoint
 
+- **Tests milestone 5 (commit `ac77c2d`).** First test suite in the repo: 168
+  tests across shared / api / web. `packages/shared` gained vitest +
+  `vitest.config.ts` + specs for `geo`, `color`, `format`, `scales` and the
+  `common`/`auth` zod schemas (specs excluded from the tsc build via
+  `tsconfig` `exclude`). `apps/api` gained Jest specs for `crypto.util`
+  (encrypt/decrypt, base32 RFC 4648 vectors), `totp.util` (RFC 4226 HOTP /
+  RFC 6238 vectors, drift window, recovery codes), `pagination` and a
+  `HealthController` suite with mocked Prisma/Redis/Upstream. `apps/web`
+  gained `vitest.config.ts` (jsdom + `esbuild.jsx: automatic` + `@/` alias —
+  needed because the web tsconfig uses `jsx: preserve`) and specs for
+  `lib/api/client` (envelope unwrap, buildQuery, ApiError, apiMaybe,
+  describeError) and `Badge`/`LiveBadge`. CI `ci.yml` now runs
+  `npm run test --workspaces --if-present` between typecheck and build.
 - **CI + Docker (commit `4abb379`, checklist item 2).** `.github/workflows/ci.yml`
   runs `npm ci` → `build:shared` → `prisma:generate` → `lint` → `typecheck` →
   `build` on every push/PR. Multi-stage Dockerfiles for `apps/api` and
@@ -270,14 +287,16 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Next up
 
-1. **More 2D map layers.** The catalogue still has ~30 layers beyond the ~25
-   wired into `/map`. Society/infrastructure layers (roads, buildings, land
-   use) are best served by the existing Esri basemaps; space layers (satellite
-   tracks, orbits) need a TLE feed; ocean currents need a current velocity
-   source. Weather and environmental raster coverage is now complete.
+1. **Auth end-to-end verification** (checklist item 3, now the top open item).
+   No one has run the API against a live Postgres/Redis and clicked through
+   register → login → session. Needs `infra/docker` compose up + a Playwright
+   pass, then the remaining API-polish audit (item 6) can lean on it.
 2. **Live city gazetteer.** `/cities/[id]` renders from the bundled curated
    list today; wiring the 40k-city gazetteer API would let detail pages serve
    any city, not just the curated set.
+3. **More 2D map layers.** Remaining catalogue layers need heavier sources
+   (submarine cables, power grid, population rasters, timezones, live traffic
+   — most keyed/premium or blocked upstream); lower priority than auth.
 
 ## Deviations from the original brief
 
@@ -287,6 +306,16 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Gotchas worth remembering
 
+- **Web vitest needs `esbuild.jsx: automatic`.** The web tsconfig uses
+  `jsx: preserve` (Next.js default), which vitest's esbuild will not transform
+  to the automatic runtime — every `*.tsx` spec fails with "React is not
+  defined" unless `esbuild: { jsx: 'automatic' }` is in `vitest.config.ts`.
+  Also add a `resolve.alias` for `@/` → `./src` and `setupFiles` importing
+  `@testing-library/jest-dom/vitest`.
+- **Shared specs must be excluded from the tsc build.** `packages/shared`
+  compiles with `rootDir: ./src`, so any `*.spec.ts` would otherwise land in
+  `dist/`. `tsconfig.json` excludes `src/**/*.spec.ts`; vitest still finds
+  them via its own include glob.
 - **Prisma client is NOT auto-generated** — there is no postinstall hook, so
   after a fresh `npm ci` the API build fails with "no exported member
   `AuditLogWhereInput`" / "`PrismaClientKnownRequestError` does not exist".
