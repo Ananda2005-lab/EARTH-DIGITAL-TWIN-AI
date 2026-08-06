@@ -6,7 +6,7 @@ Update this file whenever a milestone lands.
 _Last verified: 2026-08-06 · roughly 90% complete_
 
 > **DONE (2026-08-06):** milestone 5 of the completion checklist — "Tests" —
-> shipped as commit `ac77c2d`. The repo went from zero spec files to 168 passing
+> shipped as commit `5a627eb`. The repo went from zero spec files to 168 passing
 > tests across all three workspaces (116 shared / 33 API / 19 web). Shared got a
 > vitest setup (`packages/shared/vitest.config.ts` + `test` script) with unit
 > tests for `geo`, `color`, `format`, `scales` and the zod schemas (`common`,
@@ -58,7 +58,7 @@ connection strings. Also note: premium catalogue layers (`lightning`,
 
 Everything left before the project is done. Tick off as it lands.
 
-1. ~~**Tests**~~ — DONE (`ac77c2d`): 168 tests across all three workspaces —
+1. ~~**Tests**~~ — DONE (`5a627eb`): 168 tests across all three workspaces —
    shared (utils + zod schemas, vitest), API (crypto/totp/pagination/health,
    Jest), web (api client + Badge, vitest+jsdom). CI now runs the test step.
 2. ~~**CI + deploy artifacts**~~ — DONE (`4abb379`): GitHub Actions workflow,
@@ -258,7 +258,7 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Done since the last checkpoint
 
-- **Tests milestone 5 (commit `ac77c2d`).** First test suite in the repo: 168
+- **Tests milestone 5 (commit `5a627eb`).** First test suite in the repo: 168
   tests across shared / api / web. `packages/shared` gained vitest +
   `vitest.config.ts` + specs for `geo`, `color`, `format`, `scales` and the
   `common`/`auth` zod schemas (specs excluded from the tsc build via
