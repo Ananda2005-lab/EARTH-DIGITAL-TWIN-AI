@@ -3,7 +3,7 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-06 · roughly 84% complete_
+_Last verified: 2026-08-06 · roughly 87% complete_
 
 > **DONE (2026-08-06):** milestone 4 of the completion checklist — "more 2D
 > map layers" — shipped as commit `b62e947`. Four new live layers added to
@@ -58,8 +58,9 @@ Everything left before the project is done. Tick off as it lands.
 
 1. **Tests** — zero spec files anywhere. Add at least unit tests for
    `packages/shared` and key API modules, plus a couple of web smoke tests.
-2. **CI + deploy artifacts** — no GitHub Actions workflows; no Dockerfiles or
-   Nginx config for the apps (only local Postgres/Redis compose stack exists).
+2. ~~**CI + deploy artifacts**~~ — DONE (`4abb379`): GitHub Actions workflow,
+   Dockerfiles for both apps, nginx reverse proxy, prod compose stack. Not
+   build-tested here (no Docker CLI in this environment).
 3. **Auth end-to-end verification** — forms exist but nobody has run the API
    against a live Postgres and clicked register → login → session yet.
 4. **More 2D map layers** (~26 left) — wired so far: ocean currents, place
@@ -244,12 +245,28 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Not started
 
-1. **Tests.** Zero spec files anywhere.
-2. **CI.** No GitHub Actions workflows. No Nginx config or Dockerfiles for the
-   apps (only the local Postgres/Redis compose stack exists).
-3. **Auth is unverified end-to-end.** Forms exist and typecheck, but no one
+1. **Tests.** Zero spec files anywhere. CI does not run a test step yet —
+   add one (`npm run test --workspaces --if-present`) once specs exist, since
+   the web `vitest run` currently fails with "no test files found".
+2. **Auth is unverified end-to-end.** Forms exist and typecheck, but no one
    has run the API against a live Postgres and clicked through
    register → login → session yet.
+
+## Done since the last checkpoint
+
+- **CI + Docker (commit `4abb379`, checklist item 2).** `.github/workflows/ci.yml`
+  runs `npm ci` → `build:shared` → `prisma:generate` → `lint` → `typecheck` →
+  `build` on every push/PR. Multi-stage Dockerfiles for `apps/api` and
+  `apps/web`, `infra/docker/nginx.conf` (single reverse proxy: `/api/` →
+  api:4000, rest → web:3000), `infra/docker/docker-compose.prod.yml`
+  (web+api+nginx+postgres+redis full stack), root `.dockerignore`.
+  **Not build-tested here — Docker CLI is unavailable in this environment.**
+  Validate with `docker compose -f infra/docker/docker-compose.prod.yml up -d --build`
+  on a machine that has Docker, and confirm the Actions run on GitHub.
+- **Dev-server prewarm (commit `425df94`).** `npm run prewarm --workspace @edt/web`
+  compiles all routes up front so section clicks are ~0.5s instead of 3-6s.
+- **Map layers milestone 4 (commit `b62e947`).** ocean currents, place labels,
+  aurora, satellites layers.
 
 ## Next up
 
@@ -270,6 +287,11 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 
 ## Gotchas worth remembering
 
+- **Prisma client is NOT auto-generated** — there is no postinstall hook, so
+  after a fresh `npm ci` the API build fails with "no exported member
+  `AuditLogWhereInput`" / "`PrismaClientKnownRequestError` does not exist".
+  Run `npm run prisma:generate --workspace @edt/api` before `build:api`. CI
+  and the API Dockerfile both do this explicitly.
 - **Keep `zod` on a single version.** Root `package.json` has an `overrides`
   entry pinning it. Two copies (one hoisted, one nested under `packages/shared`)
   made every controller trip `TS2589` and drove `tsc` past an 8 GB heap. If
