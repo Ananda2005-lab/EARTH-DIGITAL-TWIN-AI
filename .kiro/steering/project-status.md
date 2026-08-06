@@ -196,7 +196,7 @@ Everything left before the project is done. Tick off as it lands.
    (Open-Meteo geocoding fallback) render, curated list remains the offline
    fallback. The full ~40k-city expansion still waits on Wikidata SPARQL
    (`build-city-index.mjs`) or a keyed source.
-6. ~~**Remaining API polish**~~ — **DONE** (commit `…`): ~50 previously
+6. ~~**Remaining API polish**~~ — **DONE** (commit `78b9e95`): ~50 previously
    unexercised endpoints audited against live Postgres/Redis; two real bugs
    fixed (seed password `??`→`||` empty-value fallback, GDACS coordinate
    parsing in hazards) and the rest were test-param/role-guard artifacts.
