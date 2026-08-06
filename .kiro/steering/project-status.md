@@ -171,7 +171,7 @@ Everything left before the project is done. Tick off as it lands.
    protected areas (GFW/WDPA), timezones (large GeoJSON), lightning (premium),
    live traffic (key), tsunami, bathymetry.
 5. ~~**Live 40k-city gazetteer**~~ — `/cities/[id]` was rendering from the bundled
-   curated list; now **DONE** (commit `…`): the web tier calls the gazetteer API
+   curated list; now **DONE** (commit `6359ae9`): the web tier calls the gazetteer API
    via `/api` (list + `by-slug`), all 210 seeded capitals with real populations
    (Open-Meteo geocoding fallback) render, curated list remains the offline
    fallback. The full ~40k-city expansion still waits on Wikidata SPARQL
