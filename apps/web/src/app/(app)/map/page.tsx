@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
 export default async function MapPage() {
   const [hazardFeed, flightFeed, vesselFeed, issState, issTrack] = await Promise.all([
     getHazardFeed({ hours: 48, minSeverity: 'low', limit: 400 }),
-    getFlights({ limit: 1200 }),
+    getFlights({ limit: 500 }),
     getVessels({ limit: 1000 }),
     getIssState(),
     getIssTrack(90),

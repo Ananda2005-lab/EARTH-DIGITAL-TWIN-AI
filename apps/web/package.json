@@ -10,7 +10,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prewarm": "node scripts/prewarm.mjs"
   },
   "dependencies": {
     "@edt/shared": "1.0.0",
