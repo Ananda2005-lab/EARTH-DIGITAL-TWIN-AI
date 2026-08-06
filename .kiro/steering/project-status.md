@@ -27,6 +27,31 @@ Technical shape: npm-workspaces monorepo (`@edt/*`), NestJS API
 (`packages/shared`). Stack chosen over the brief: MapLibre GL + react-three-
 fiber instead of CesiumJS; AI lives in the Nest `ai` module (no FastAPI).
 
+## API keys the user must provide
+
+Most of the map data is keyless and works as-is (Open-Meteo weather, NASA GIBS
+rasters, NOAA aurora, CelesTrak TLEs, RainViewer radar, GDACS hazards, Esri
+basemaps). These features are **disabled until the user supplies a key** (the
+code self-disables when the env var is absent — see `apps/web/.env.example`):
+
+| Env var(s) | Unlocks | Get it at |
+| ---------- | ------- | --------- |
+| `AISSTREAM_API_KEY` | Live ships / AIS vessels (`/ships`, ships layer — currently EMPTY without it) | https://www.aisstream.io — free tier |
+| `OPENSKY_CLIENT_ID` + `OPENSKY_CLIENT_SECRET` | Reliable live flights (anonymous free tier is rate-limited / flaky) | https://opensky-network.org — free account |
+| `NASA_FIRMS_API_KEY` | Wildfires layer (catalogue marks it `requiresKey`) | https://earthdata.nasa.gov — free FIRMS key |
+| `TOMTOM_API_KEY` | Live traffic layer (catalogue marks it `requiresKey`) | https://developer.tomtom.com — free tier |
+| `MAPTILER_API_KEY` | Extra basemap styles / terrain | https://cloud.maptiler.com |
+| `CESIUM_ION_TOKEN` | World terrain / photogrammetry tiles | https://ion.cesium.com |
+
+How to apply: copy `apps/web/.env.example` → `apps/web/.env.local`, fill the
+values, restart the web dev server, then `npm run prewarm --workspace @edt/web`.
+
+Not a key but required for full functionality: a running **Postgres + Redis**
+(local compose stack in `infra/docker`) so auth E2E, the live gazetteer and the
+admin pages actually work — the API reads `apps/api/.env.example` for those
+connection strings. Also note: premium catalogue layers (`lightning`,
+`co2_emissions`) need paid plans, not just keys.
+
 ## Remaining work to completion (checklist)
 
 Everything left before the project is done. Tick off as it lands.
