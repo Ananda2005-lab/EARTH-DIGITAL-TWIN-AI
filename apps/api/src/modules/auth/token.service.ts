@@ -283,7 +283,6 @@ export class TokenService {
       expiresIn: jwtConfig.accessTtl,
       issuer: jwtConfig.issuer,
       audience: jwtConfig.audience,
-      jwtid: jti,
     });
 
     const refreshToken = randomToken(48);

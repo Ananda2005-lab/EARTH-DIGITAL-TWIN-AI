@@ -23,9 +23,9 @@ const int = (fallback: number, min?: number, max?: number) => {
 const optionalString = z
   .string()
   .trim()
-  .min(1)
   .optional()
-  .transform((value) => (value === '' ? undefined : value));
+  .transform((value) => (value === '' ? undefined : value))
+  .pipe(z.string().min(1).optional());
 
 /**
  * Authoritative description of every environment variable the API reads.
