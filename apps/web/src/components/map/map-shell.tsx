@@ -34,6 +34,7 @@ import {
   satellitesToGeoJson,
   seaportsToGeoJson,
   SUPPORTED_DATA_LAYERS,
+  TERRAIN_DEM_URL,
   terminatorToGeoJson,
   vesselsToGeoJson,
   WIND_ARROWS_LAYER_ID,
@@ -379,6 +380,17 @@ function addLayer(
       );
       break;
     }
+    case 'terrain_mesh': {
+      map.addSource('terrain_mesh', {
+        type: 'raster-dem',
+        tiles: [TERRAIN_DEM_URL],
+        tileSize: 256,
+        maxzoom: 12,
+        encoding: 'terrarium',
+      });
+      map.setTerrain({ source: 'terrain_mesh', exaggeration: 1.5 });
+      break;
+    }
     case 'timezones': {
       if (!timezones) return;
       map.addSource('timezones', {
@@ -682,6 +694,7 @@ function removeLayer(map: maplibregl.Map, layerId: string): void {
   const related = new Set<string>([layerId, `${layerId}-track`, `${layerId}-terminator`]);
   if (layerId === 'wind') related.add(WIND_ARROWS_LAYER_ID);
   if (layerId === 'timezones') related.add('timezones-outline');
+  if (layerId === 'terrain_mesh') map.setTerrain(null);
   for (const id of related) {
     if (map.getLayer(id)) map.removeLayer(id);
   }

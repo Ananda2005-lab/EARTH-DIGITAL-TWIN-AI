@@ -50,6 +50,7 @@ export const SUPPORTED_DATA_LAYERS = new Set<string>([
   'graticule',
   'day_night',
   'timezones',
+  'terrain_mesh',
   'temperature',
   'precipitation',
   'clouds',
@@ -592,6 +593,13 @@ export function subsolarPoint(date: Date): LngLat {
 
 export const DEFAULT_MAP_CENTER: LngLat = { lng: 12.4964, lat: 25.0 };
 export const DEFAULT_MAP_ZOOM = 2;
+
+/**
+ * Keyless public DEM tiles (Mapzen terrarium encoding) used by the terrain
+ * mesh layer via MapLibre's raster-dem source + setTerrain.
+ */
+export const TERRAIN_DEM_URL =
+  'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
 
 /**
  * IANA time zone polygons (Natural Earth 10m, bundled so the layer works
