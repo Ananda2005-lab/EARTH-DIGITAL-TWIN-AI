@@ -11,7 +11,7 @@ interface TimezoneEntry {
   label: string;
 }
 
-const TIMEZONES: TimezoneEntry[] = [
+export const TIMEZONES: TimezoneEntry[] = [
   { tz: 'Pacific/Midway', label: 'Midway Atoll' },
   { tz: 'Pacific/Honolulu', label: 'Honolulu' },
   { tz: 'America/Anchorage', label: 'Anchorage' },
