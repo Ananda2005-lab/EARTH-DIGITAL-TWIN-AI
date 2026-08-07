@@ -64,6 +64,7 @@ export const SUPPORTED_DATA_LAYERS = new Set<string>([
   'wave_height',
   'sea_ice',
   'ocean_currents',
+  'solar_radiation',
   'vegetation_ndvi',
   'snow_cover',
   'night_luminosity',
@@ -316,6 +317,10 @@ export const OM_RASTER_LAYERS: Record<string, OmRasterLayer> = {
   },
   air_quality: {
     url: 'https://map-tiles.open-meteo.com/data_spatial/cams_global/latest.json?time_step=current_time_1H&variable=pm2_5',
+    maxzoom: 8,
+  },
+  solar_radiation: {
+    url: 'https://map-tiles.open-meteo.com/data_spatial/ecmwf_ifs025/latest.json?time_step=current_time_1H&variable=shortwave_radiation',
     maxzoom: 8,
   },
   wave_height: {
