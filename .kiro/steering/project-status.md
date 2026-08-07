@@ -3,7 +3,17 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-06 · roughly 94% complete_
+_Last verified: 2026-08-07 · roughly 96% complete_
+
+> **DONE (2026-08-07):** three more keyless map layers wired (solar radiation
+> via Open-Meteo `ecmwf_ifs025` `shortwave_radiation`, timezones via a bundled
+> Natural Earth 10m GeoJSON, terrain elevation via keyless public terrarium DEM
+> tiles + `map.setTerrain`) and the `/timezones` page gained a **meeting
+> planner** (pick participants + proposed wall-clock time → per-city local time,
+> working-hour status, upcoming-DST badge, best-overlap UTC hours). Wall-to-UTC
+> conversion is DST aware via the browser's Intl timezone data (commits
+> `99aa33b`, `ee6b898`, `a98e381`, `b2d294c`). Remaining unwired layers are the
+> keyed/premium/blocked set listed below.
 
 > **DONE (2026-08-06):** checklist item 6 **closed — API polish audit against
 > live Postgres/Redis.** Exercised ~50 of the 115 OpenAPI paths not previously
@@ -183,13 +193,16 @@ Everything left before the project is done. Tick off as it lands.
    HTTP, and the web UI pass (Playwright 9/9) confirmed register → login →
    session through the browser. Access token now mirrors into an `edt_access`
    cookie so user-scoped endpoints work from the browser.
-4. **More 2D map layers** (~26 left) — wired so far: ocean currents, place
-   labels, aurora, satellites. Remaining candidates need heavier sources:
-   submarine cables (TeleGeography data path on GitHub changed → 404),
+4. **More 2D map layers** — wired now: solar radiation, timezones, terrain
+   elevation, ocean currents, place labels, aurora, satellites, live weather
+   rasters (temperature/clouds/pressure/wind/air quality/waves), environmental
+   rasters (SST/sea ice/snow/NDVI/night lights), hazards, flights, ships, ISS,
+   airports/seaports, graticule, day/night. Remaining candidates need heavier
+   sources: submarine cables (TeleGeography data path on GitHub changed → 404),
    power grid (OpenInfraMap tiles blocked), population/urban (WorldPop/GHSL,
    no keyless tiles), transit (OSM/Transitland vector tiles), forest cover /
-   protected areas (GFW/WDPA), timezones (large GeoJSON), lightning (premium),
-   live traffic (key), tsunami, bathymetry.
+   protected areas (GFW/WDPA), lightning (premium), live traffic (key),
+   tsunami, bathymetry.
 5. ~~**Live 40k-city gazetteer**~~ — `/cities/[id]` was rendering from the bundled
    curated list; now **DONE** (commit `6359ae9`): the web tier calls the gazetteer API
    via `/api` (list + `by-slug`), all 210 seeded capitals with real populations
@@ -230,7 +243,7 @@ npm workspaces monorepo, `@edt/*` scope. Git initialised, branch `master`.
 | ----------------- | ------------- | -------------------------------------------------------------- |
 | `packages/shared` | `@edt/shared` | Done — types, Zod schemas, constants, utils.                   |
 | `apps/api`        | `@edt/api`    | ~95% — 21 controllers, 139 endpoints. Builds, lints, typechecks. |
-| `apps/web`        | `@edt/web`    | ~32% — foundation done, all 43 routes built, `/map` now live.   |
+| `apps/web`        | `@edt/web`    | ~96% — foundation done, all 43 routes built, `/map` now live.   |
 | `scripts`         | —             | Two gazetteer index builders.                                  |
 | `infra/docker`    | —             | Local Postgres/Redis compose stack.                            |
 
@@ -333,6 +346,13 @@ fetch of `/map` (200, no runtime errors).
   `day/night` (terminator fill + dashed line, computed from the subsolar point)
   are built in `map-data.ts` rather than fetched.
 - Default-enabled layers are now `['borders','day_night','earthquakes']`.
+- **More keyless layers (commits `99aa33b`, `ee6b898`, `a98e381`):** solar
+  radiation (Open-Meteo `ecmwf_ifs025` `shortwave_radiation` raster — probe the
+  model's `latest.json?variable=<x>` before wiring; `dwd_icon` lacks it),
+  timezones (bundled Natural Earth 10m GeoJSON rounded to 2 decimals +
+  properties stripped to `name`/`time_zone`, ~2.2MB), and terrain elevation
+  (keyless public terrarium DEM PNG tiles via `map.setTerrain`, reset on
+  toggle-off).
 
 Two pre-existing runtime bugs were found and fixed during verification: (1) the
 "Style is not done loading." crash when layers synced before the style load
@@ -407,6 +427,12 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
   on a machine that has Docker, and confirm the Actions run on GitHub.
 - **Dev-server prewarm (commit `425df94`).** `npm run prewarm --workspace @edt/web`
   compiles all routes up front so section clicks are ~0.5s instead of 3-6s.
+- **Keyless map layers + meeting planner (commits `99aa33b`, `ee6b898`, `a98e381`,
+  `b2d294c`, 2026-08-07).** Solar radiation, timezones (bundled Natural Earth
+  GeoJSON), terrain elevation (terrarium DEM + `map.setTerrain`) wired into
+  `SUPPORTED_DATA_LAYERS`/`addLayer`/`removeLayer`. `/timezones` now has a
+  meeting planner with DST-aware wall-to-UTC conversion and best-overlap UTC
+  hours.
 - **Map layers milestone 4 (commit `b62e947`).** ocean currents, place labels,
   aurora, satellites layers.
 
@@ -415,9 +441,9 @@ That's 43 routes total, verified with a real `next start` + HTTP fetch pass
 1. ~~**Remaining API polish.**~~ **DONE** — ~50 endpoints audited, two real bugs
    fixed (seed password fallback, GDACS coords), all 115 paths respond as
    expected.
-2. **More 2D map layers.** Remaining catalogue layers need heavier sources
-   (submarine cables, power grid, population rasters, timezones, live traffic
-   — most keyed/premium or blocked upstream).
+2. **More 2D map layers.** Keyless/low-hanging layers are wired (solar, timezones,
+   terrain now done). Remaining catalogue layers need paid plans, API keys, or
+   heavier blocked sources (see checklist item 4).
 3. **~40k-city gazetteer expansion.** Web is wired to the gazetteer API; the DB
    holds 210 capitals. Expanding to the full set waits on Wikidata SPARQL
    availability (or a keyed source) via `npm run build:city-index`.
