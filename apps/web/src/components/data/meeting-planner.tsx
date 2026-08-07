@@ -68,7 +68,7 @@ function describeZone(instant: Date, timeZone: string): ZoneInfo {
 }
 
 /** Parses "+05:30" / "-8" style offset labels into signed minutes. */
-function parseOffsetMinutes(label: string): number {
+export function parseOffsetMinutes(label: string): number {
   const match = /^([+-])(\d{1,2})(?::(\d{2}))?$/.exec(label.trim());
   if (!match) return 0;
   const sign = match[1] === '-' ? -1 : 1;
@@ -76,7 +76,7 @@ function parseOffsetMinutes(label: string): number {
 }
 
 /** Interprets a wall-clock time in an IANA zone as an absolute instant. */
-function zonedWallToUtc(date: string, time: string, timeZone: string): Date {
+export function zonedWallToUtc(date: string, time: string, timeZone: string): Date {
   const [y = 0, m = 1, d = 1] = date.split('-').map((part) => Number(part));
   const [hh = 0, mm = 0] = time.split(':').map((part) => Number(part));
   const utcGuess = new Date(Date.UTC(y, m - 1, d, hh, mm));
