@@ -49,6 +49,7 @@ export const SUPPORTED_DATA_LAYERS = new Set<string>([
   'labels',
   'graticule',
   'day_night',
+  'timezones',
   'temperature',
   'precipitation',
   'clouds',
@@ -591,6 +592,19 @@ export function subsolarPoint(date: Date): LngLat {
 
 export const DEFAULT_MAP_CENTER: LngLat = { lng: 12.4964, lat: 25.0 };
 export const DEFAULT_MAP_ZOOM = 2;
+
+/**
+ * IANA time zone polygons (Natural Earth 10m, bundled so the layer works
+ * offline). Fetched once per session on the client when the layer toggles on.
+ */
+let cachedTimezones: GeoJsonFeatureCollection | null = null;
+
+export async function fetchTimezonePolygons(): Promise<GeoJsonFeatureCollection> {
+  if (cachedTimezones) return cachedTimezones;
+  const response = await fetch('/data/timezones-10m.json');
+  cachedTimezones = (await response.json()) as GeoJsonFeatureCollection;
+  return cachedTimezones;
+}
 
 /** Live counts for each supported data layer, shown next to the toggles. */
 export function layerCounts(data: MapData): Record<string, number> {

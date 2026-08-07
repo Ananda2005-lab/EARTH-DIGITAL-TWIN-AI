@@ -20,6 +20,7 @@ import {
   ESRI_RASTER_LAYERS,
   fetchAuroraGeoJson,
   fetchSatellitePositions,
+  fetchTimezonePolygons,
   flightsToGeoJson,
   gibsTileUrl,
   GIBS_RASTER_LAYERS,
@@ -80,6 +81,7 @@ export function MapShell({ data }: { data: MapData }) {
   const [radarUrl, setRadarUrl] = React.useState<string | null>(null);
   const [aurora, setAurora] = React.useState<GeoJsonFeatureCollection | null>(null);
   const [satellites, setSatellites] = React.useState<GeoJsonFeatureCollection | null>(null);
+  const [timezones, setTimezones] = React.useState<GeoJsonFeatureCollection | null>(null);
 
   const basemapDefinition = getBasemap(basemap) ?? getBasemap('satellite')!;
   const counts = React.useMemo(() => layerCounts(data), [data]);
@@ -183,6 +185,18 @@ export function MapShell({ data }: { data: MapData }) {
     };
   }, [enabled, aurora]);
 
+  // Fetch the bundled time zone polygons once the layer is enabled.
+  React.useEffect(() => {
+    if (!enabled.has('timezones') || timezones !== null) return;
+    let cancelled = false;
+    fetchTimezonePolygons().then((data) => {
+      if (!cancelled) setTimezones(data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, timezones]);
+
   // Propagate TLEs to the current instant while the satellites layer is on,
   // refreshing every minute so positions track their orbits.
   React.useEffect(() => {
@@ -209,7 +223,7 @@ export function MapShell({ data }: { data: MapData }) {
     if (!map) return;
 
     let cancelled = false;
-    const context: LayerContext = { data, outlines, radarUrl, aurora, satellites };
+    const context: LayerContext = { data, outlines, radarUrl, aurora, satellites, timezones };
     const applyLayers = () => {
       if (cancelled) return;
       for (const layerId of SUPPORTED_DATA_LAYERS) {
@@ -255,7 +269,7 @@ export function MapShell({ data }: { data: MapData }) {
     return () => {
       cancelled = true;
     };
-  }, [enabled, outlines, radarUrl, data, aurora, satellites]);
+  }, [enabled, outlines, radarUrl, data, aurora, satellites, timezones]);
 
   return (
     <div className="map-shell">
@@ -288,12 +302,13 @@ interface LayerContext {
   radarUrl: string | null;
   aurora: GeoJsonFeatureCollection | null;
   satellites: GeoJsonFeatureCollection | null;
+  timezones: GeoJsonFeatureCollection | null;
 }
 
 function addLayer(
   map: maplibregl.Map,
   layerId: string,
-  { data, outlines, radarUrl, aurora, satellites }: LayerContext,
+  { data, outlines, radarUrl, aurora, satellites, timezones }: LayerContext,
 ): void {
   const definition = getLayer(layerId);
   const opacity = definition?.opacity ?? 1;
@@ -362,6 +377,30 @@ function addLayer(
         },
         before,
       );
+      break;
+    }
+    case 'timezones': {
+      if (!timezones) return;
+      map.addSource('timezones', {
+        type: 'geojson',
+        data: timezones as unknown as GeoJSON.GeoJSON,
+      });
+      map.addLayer({
+        id: 'timezones',
+        type: 'fill',
+        source: 'timezones',
+        paint: { 'fill-color': '#c4b5fd', 'fill-opacity': opacity * 0.18 },
+      });
+      map.addLayer({
+        id: 'timezones-outline',
+        type: 'line',
+        source: 'timezones',
+        paint: {
+          'line-color': '#c4b5fd',
+          'line-width': 0.6,
+          'line-opacity': opacity,
+        },
+      });
       break;
     }
     case 'precipitation': {
@@ -642,6 +681,7 @@ function addLayer(
 function removeLayer(map: maplibregl.Map, layerId: string): void {
   const related = new Set<string>([layerId, `${layerId}-track`, `${layerId}-terminator`]);
   if (layerId === 'wind') related.add(WIND_ARROWS_LAYER_ID);
+  if (layerId === 'timezones') related.add('timezones-outline');
   for (const id of related) {
     if (map.getLayer(id)) map.removeLayer(id);
   }
