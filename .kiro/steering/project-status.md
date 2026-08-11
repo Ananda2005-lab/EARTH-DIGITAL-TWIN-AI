@@ -14,6 +14,15 @@ _Last verified: 2026-08-07 · roughly 96% complete_
 > conversion is DST aware via the browser's Intl timezone data (commits
 > `99aa33b`, `ee6b898`, `a98e381`, `b2d294c`). Remaining unwired layers are the
 > keyed/premium/blocked set listed below.
+>
+> **VERIFIED (2026-08-07):** full web UI completeness sweep — no dead internal
+> links (all 36 nav routes + `/forgot-password` + dynamic `/cities/[id]` and
+> `/countries/[code]` resolve), no stub/placeholder pages (only `/timeline`'s
+> intentional "scoped-down v1" note), and all 24 public routes return HTTP 200
+> against the live dev server (admin routes intentionally 401-gate when logged
+> out). `forest_cover` (GFW tileserver/data-api/Hansen TIFs all 404 — keyed) and
+> `drought` (EDO WMS returns HTML, GDO times out) confirmed **no keyless source**;
+> meeting planner timezone math now covered by 8 unit tests (`a2321d3`).
 
 > **DONE (2026-08-06):** checklist item 6 **closed — API polish audit against
 > live Postgres/Redis.** Exercised ~50 of the 115 OpenAPI paths not previously
