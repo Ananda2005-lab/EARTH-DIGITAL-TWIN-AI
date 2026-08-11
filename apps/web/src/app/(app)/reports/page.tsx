@@ -136,6 +136,21 @@ function ReportRow({ report }: { report: Report }) {
           {report.summary ? ` · ${report.summary}` : ''}
         </p>
       </div>
+      {report.status === 'ready' ? (
+        <a
+          href={`/api/reports/${report.id}/export.md`}
+          download={`${report.title}.md`}
+          className="mt-0.5 shrink-0"
+          aria-label={`Download ${report.title} as Markdown`}
+        >
+          <Button variant="outline" size="sm" asChild>
+            <span>
+              <Download />
+              Download
+            </span>
+          </Button>
+        </a>
+      ) : null}
       <ReportStatusBadge status={report.status} className="mt-0.5 shrink-0" />
     </li>
   );
@@ -175,7 +190,7 @@ function ReportsPreviewSection() {
             <CardFooter>
               <Button variant="outline" size="sm" className="w-full" disabled>
                 <Download />
-                Download PDF
+                Download Markdown
               </Button>
             </CardFooter>
           </Card>
