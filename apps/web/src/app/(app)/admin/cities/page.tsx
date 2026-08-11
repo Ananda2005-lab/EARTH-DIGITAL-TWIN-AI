@@ -11,6 +11,7 @@ import { Suspense } from 'react';
 
 import { AdminPagination } from '@/components/admin/admin-pagination';
 import { AdminSearchBar } from '@/components/admin/admin-search-bar';
+import { CityCurationDialog } from '@/components/admin/city-curation-dialog';
 import { PageHeader } from '@/components/layout/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -127,6 +128,7 @@ async function CitiesView({ searchParams }: { searchParams: CitiesSearchParams }
                 <th className="px-3 py-3 font-medium">Capital</th>
                 <th className="px-3 py-3 font-medium">Timezone</th>
                 <th className="px-5 py-3 text-right font-medium">Population</th>
+                <th className="px-5 py-3 font-medium" />
               </tr>
             </thead>
             <tbody className="divide-border/60 divide-y">
@@ -155,6 +157,9 @@ async function CitiesView({ searchParams }: { searchParams: CitiesSearchParams }
                   <td className="numeric text-muted-foreground px-3 py-2.5">{city.timezone}</td>
                   <td className="numeric px-5 py-2.5 text-right">
                     {formatCompact(city.population)}
+                  </td>
+                  <td className="px-5 py-2.5">
+                    <CityCurationDialog cityId={city.id} name={city.name} />
                   </td>
                 </tr>
               ))}
