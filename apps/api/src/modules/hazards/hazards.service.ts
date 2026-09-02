@@ -144,7 +144,10 @@ export class HazardsService {
         ) {
           return false;
         }
-        const bucket = `${event.kind}:${event.location.lat.toFixed(1)}:${event.location.lng.toFixed(1)}:${event.startedAt.slice(0, 13)}`;
+        const lat = Number(event.location.lat);
+        const lng = Number(event.location.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+        const bucket = `${event.kind}:${lat.toFixed(1)}:${lng.toFixed(1)}:${event.startedAt.slice(0, 13)}`;
         if (seen.has(bucket)) return false;
         seen.add(bucket);
         return true;
@@ -394,8 +397,12 @@ export class HazardsService {
       .map((feature): HazardEvent | null => {
         const properties = feature.properties;
         const kind = GDACS_TYPES[properties.eventtype];
-        const coordinates = feature.geometry?.coordinates;
-        if (!kind || !coordinates) return null;
+        if (!kind) return null;
+        // GDACS occasionally serves coordinates as a comma-joined string
+        // ("lng,lat") or omits the latitude entirely — normalise to numbers.
+        const raw = feature.geometry?.coordinates;
+        const point = parseCoordinates(raw);
+        if (!point) return null;
         const severity = GDACS_SEVERITY[properties.alertlevel ?? 'Green'] ?? 'moderate';
         return {
           id: `gdacs:${properties.eventtype}:${properties.eventid}`,
@@ -403,7 +410,7 @@ export class HazardsService {
           title: properties.eventname || stripHtml(properties.htmldescription) || `${kind} event`,
           severity,
           intensity: severity === 'extreme' ? 0.95 : severity === 'high' ? 0.7 : 0.4,
-          location: { lng: coordinates[0], lat: coordinates[1] },
+          location: point,
           affectedPopulation: properties.population?.value,
           place: properties.country,
           countryCode: properties.iso3?.slice(0, 2),
@@ -452,6 +459,19 @@ function firstPoint(coordinates: unknown): LngLat | null {
   }
   if (Array.isArray(coordinates) && coordinates.length > 0) return firstPoint(coordinates[0]);
   return null;
+}
+
+/** GDACS coordinates may be `[lng, lat]`, a nested ring, or a "lng,lat" string. */
+function parseCoordinates(raw: unknown): LngLat | null {
+  if (typeof raw === 'string') {
+    const parts = raw.split(',').map((part) => Number(part.trim()));
+    const lng = parts[0];
+    const lat = parts[1];
+    if (typeof lng !== 'number' || typeof lat !== 'number') return null;
+    if (Number.isFinite(lng) && Number.isFinite(lat)) return { lng, lat };
+    return null;
+  }
+  return firstPoint(raw);
 }
 
 function stripHtml(input?: string): string {

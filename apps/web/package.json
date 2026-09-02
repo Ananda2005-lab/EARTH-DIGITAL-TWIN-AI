@@ -10,10 +10,12 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prewarm": "node scripts/prewarm.mjs"
   },
   "dependencies": {
     "@edt/shared": "1.0.0",
+    "@openmeteo/weather-map-layer": "^0.0.20",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-avatar": "^1.1.2",
     "@radix-ui/react-checkbox": "^1.1.3",
@@ -49,6 +51,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.15.0",
+    "satellite.js": "^5.0.0",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.6.0",
     "three": "^0.170.0",

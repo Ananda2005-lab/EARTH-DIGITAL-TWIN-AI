@@ -20,10 +20,19 @@ const int = (fallback: number, min?: number, max?: number) => {
     .pipe(schema);
 };
 
+<<<<<<< HEAD
 const optionalString = z.preprocess(
   (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
   z.string().trim().min(1).optional(),
 );
+=======
+const optionalString = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value === '' ? undefined : value))
+  .pipe(z.string().min(1).optional());
+>>>>>>> 005c357b565eaf6ff99b0cc04ff8ed07cf1d64a0
 
 /**
  * Authoritative description of every environment variable the API reads.

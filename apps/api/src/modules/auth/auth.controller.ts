@@ -37,6 +37,7 @@ import type { AppConfig } from 'src/config/configuration';
 import { AuthService, type OAuthProfileInput } from './auth.service';
 import { MfaService, type MfaEnrolment } from './mfa.service';
 import type { SessionSummary } from './token.service';
+import { parseDuration } from './token.service';
 import {
   ChangePasswordDto,
   ForgotPasswordDto,
@@ -50,6 +51,7 @@ import {
 } from './dto/auth.dto';
 
 const REFRESH_COOKIE = 'edt_refresh';
+const ACCESS_COOKIE = 'edt_access';
 
 /** Tight limits on credential endpoints: 10 attempts per 5 minutes per client. */
 const CREDENTIAL_THROTTLE = { default: { limit: 10, ttl: 300_000 } };
@@ -84,6 +86,7 @@ export class AuthController {
   ): Promise<AuthSession> {
     const session = await this.auth.register(dto, this.contextOf(request));
     this.setRefreshCookie(response, session.tokens.refreshToken);
+    this.setAccessCookie(response, session.tokens.accessToken);
     return session;
   }
 
@@ -106,6 +109,7 @@ export class AuthController {
   ): Promise<AuthSession> {
     const session = await this.auth.login(dto, this.contextOf(request));
     this.setRefreshCookie(response, session.tokens.refreshToken);
+    this.setAccessCookie(response, session.tokens.accessToken);
     return session;
   }
 
@@ -130,6 +134,7 @@ export class AuthController {
     if (!token) throw AppException.unauthorised('No refresh token supplied');
     const session = await this.auth.refresh(token, this.contextOf(request));
     this.setRefreshCookie(response, session.tokens.refreshToken);
+    this.setAccessCookie(response, session.tokens.accessToken);
     return session;
   }
 
@@ -149,6 +154,7 @@ export class AuthController {
     const token = dto.refreshToken ?? this.readRefreshCookie(request);
     await this.auth.logout(token, request.user?.id ?? null, this.contextOf(request));
     response.clearCookie(REFRESH_COOKIE, { path: '/' });
+    this.clearAccessCookie(response);
   }
 
   @Get('me')
@@ -415,6 +421,7 @@ export class AuthController {
     try {
       const session = await this.auth.loginWithOAuth(profile, this.contextOf(request));
       this.setRefreshCookie(response, session.tokens.refreshToken);
+      this.setAccessCookie(response, session.tokens.accessToken);
       const url = new URL(oauth.successRedirect);
       url.searchParams.set('access_token', session.tokens.accessToken);
       url.searchParams.set('expires_in', String(session.tokens.expiresIn));
@@ -437,6 +444,27 @@ export class AuthController {
       path: '/',
       maxAge: jwt.refreshTtlDays * 86_400_000,
     });
+  }
+
+  /**
+   * The browser-only flow (web app) authenticates through cookies, so the short-
+   * lived access token is also mirrored into an HttpOnly cookie — the JWT
+   * strategy already reads it (see strategies/jwt.strategy.ts). Clearing it on
+   * logout keeps `/auth/me` honest even if the refresh cookie somehow survives.
+   */
+  private setAccessCookie(response: Response, token: string): void {
+    const seconds = parseDuration(this.config.get('jwt', { infer: true }).accessTtl);
+    response.cookie(ACCESS_COOKIE, token, {
+      httpOnly: true,
+      secure: this.config.get('isProduction', { infer: true }),
+      sameSite: 'lax',
+      path: '/',
+      maxAge: seconds * 1000,
+    });
+  }
+
+  private clearAccessCookie(response: Response): void {
+    response.clearCookie(ACCESS_COOKIE, { path: '/' });
   }
 
   private readRefreshCookie(request: Request): string | undefined {

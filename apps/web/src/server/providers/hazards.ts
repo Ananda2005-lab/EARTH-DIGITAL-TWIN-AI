@@ -341,8 +341,11 @@ export async function getHazardFeed(options: HazardFetchOptions = {}): Promise<H
   const results = await Promise.all(tasks);
   const seen = new Set<string>();
   const seenIds = new Set<string>();
+<<<<<<< HEAD
   const seenTitles = new Set<string>();
   const normaliseTitle = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+=======
+>>>>>>> 005c357b565eaf6ff99b0cc04ff8ed07cf1d64a0
   let events = results
     .flat()
     // Sort first so the most severe variant of a duplicated event survives.
@@ -361,6 +364,7 @@ export async function getHazardFeed(options: HazardFetchOptions = {}): Promise<H
       ) {
         return false;
       }
+<<<<<<< HEAD
       // Exact-id duplicates (GDACS re-lists the same eventid per episode).
       if (seenIds.has(event.id)) return false;
       seenIds.add(event.id);
@@ -374,6 +378,13 @@ export async function getHazardFeed(options: HazardFetchOptions = {}): Promise<H
         seenTitles.add(titleKey);
       }
       // Spatial/time bucket: catches remaining duplicates with fuzzy titles.
+=======
+      // A provider returning the same eventid twice would produce duplicate
+      // React keys downstream, so hard-dedupe on the canonical id first.
+      if (seenIds.has(event.id)) return false;
+      seenIds.add(event.id);
+      // De-duplicate the same physical event reported by multiple providers.
+>>>>>>> 005c357b565eaf6ff99b0cc04ff8ed07cf1d64a0
       // Coerced with `Number(...)` because upstream JSON (GDACS in particular)
       // does not always guarantee numeric types for coordinate fields.
       const lat = Number(event.location.lat).toFixed(1);

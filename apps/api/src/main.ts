@@ -143,9 +143,32 @@ async function bootstrap(): Promise<void> {
   });
 
   app.setGlobalPrefix(GLOBAL_PREFIX, { exclude: ['api/docs', 'api/docs/json'] });
+<<<<<<< HEAD
   // The major version lives in the path prefix (`/api/v1`). No controller
   // declares an explicit version, so no versioning scheme is enabled on top:
   // header versioning would 404 every request lacking `x-api-version`.
+=======
+  // The major version lives in the path prefix (`/api/v1`). Header versioning is
+  // enabled on top of it so a future minor revision of a single endpoint can be
+  // introduced with `x-api-version` without moving every other route.
+  //
+  // NestJS's HEADER version filter only falls back to the default version for
+  // `VERSION_NEUTRAL` routes; for a concrete string version it requires the
+  // header to be present and answers 404 otherwise. Default the header to the
+  // current major version so unversioned clients (the web app, curl, health
+  // probes) keep working while an explicit `x-api-version` still wins.
+  app.use((req: import('express').Request, _res: import('express').Response, next: import('express').NextFunction) => {
+    if (req.headers['x-api-version'] === undefined) {
+      req.headers['x-api-version'] = '1';
+    }
+    next();
+  });
+  app.enableVersioning({
+    type: VersioningType.HEADER,
+    header: 'x-api-version',
+    defaultVersion: '1',
+  });
+>>>>>>> 005c357b565eaf6ff99b0cc04ff8ed07cf1d64a0
 
   configureSwagger(app, config);
 

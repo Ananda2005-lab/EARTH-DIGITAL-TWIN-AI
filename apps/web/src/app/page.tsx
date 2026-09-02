@@ -154,7 +154,7 @@ export default function LandingPage() {
             {[
               { value: `${LAYERS.length}`, label: 'Map layers' },
               { value: '250', label: 'Territories' },
-              { value: '40k', label: 'Cities' },
+              { value: '210', label: 'Cities' },
               { value: '12', label: 'Live feeds' },
             ].map((stat) => (
               <div key={stat.label} className="glass-sm px-4 py-5">

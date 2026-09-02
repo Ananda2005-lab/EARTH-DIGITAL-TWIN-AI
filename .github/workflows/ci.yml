@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+<<<<<<< HEAD
     branches: [master, main]
   pull_request:
 
@@ -19,6 +20,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+=======
+    branches: [master]
+  pull_request:
+
+jobs:
+  verify:
+    name: Lint, typecheck, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+>>>>>>> 005c357b565eaf6ff99b0cc04ff8ed07cf1d64a0
           cache: npm
 
       - name: Install dependencies
@@ -27,7 +46,13 @@ jobs:
       - name: Build shared package
         run: npm run build:shared
 
+<<<<<<< HEAD
       - name: Prisma generate
+=======
+      # Fresh `npm ci` has no generated Prisma client, and there is no
+      # postinstall hook, so generate it before the API can be compiled.
+      - name: Generate Prisma client
+>>>>>>> 005c357b565eaf6ff99b0cc04ff8ed07cf1d64a0
         run: npm run prisma:generate --workspace @edt/api
 
       - name: Lint
@@ -36,6 +61,7 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+<<<<<<< HEAD
       - name: Unit tests
         run: npm test --workspace @edt/api
 
@@ -46,3 +72,10 @@ jobs:
         run: npm run build:web
         env:
           NEXT_TELEMETRY_DISABLED: '1'
+=======
+      - name: Test
+        run: npm run test --workspaces --if-present
+
+      - name: Build apps
+        run: npm run build
+>>>>>>> 005c357b565eaf6ff99b0cc04ff8ed07cf1d64a0

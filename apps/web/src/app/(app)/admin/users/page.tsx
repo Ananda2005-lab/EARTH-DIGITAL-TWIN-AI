@@ -9,6 +9,7 @@ import { Suspense } from 'react';
 
 import { AdminPagination } from '@/components/admin/admin-pagination';
 import { AdminSearchBar } from '@/components/admin/admin-search-bar';
+import { AdminUserActions } from '@/components/admin/admin-user-actions';
 import { RequireAuthNotice } from '@/components/data/require-auth-notice';
 import { PageHeader } from '@/components/layout/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -130,7 +131,8 @@ async function UsersView({ searchParams }: { searchParams: UsersSearchParams }) 
                 <th className="px-3 py-3 font-medium">Plan</th>
                 <th className="px-3 py-3 font-medium">Status</th>
                 <th className="px-3 py-3 font-medium">Joined</th>
-                <th className="px-5 py-3 font-medium">Last login</th>
+                <th className="px-3 py-3 font-medium">Last login</th>
+                <th className="px-5 py-3 font-medium" />
               </tr>
             </thead>
             <tbody className="divide-border/60 divide-y">
@@ -159,8 +161,16 @@ async function UsersView({ searchParams }: { searchParams: UsersSearchParams }) 
                   <td className="text-muted-foreground px-3 py-2.5">
                     {formatDate(user.createdAt)}
                   </td>
-                  <td className="text-muted-foreground px-5 py-2.5">
+                  <td className="text-muted-foreground px-3 py-2.5">
                     {user.lastLoginAt ? formatRelativeTime(user.lastLoginAt) : 'Never'}
+                  </td>
+                  <td className="px-5 py-2.5">
+                    <AdminUserActions
+                      userId={user.id}
+                      role={user.role}
+                      plan={user.plan}
+                      suspended={user.status === 'suspended'}
+                    />
                   </td>
                 </tr>
               ))}

@@ -534,6 +534,7 @@ export async function getRanking(
   direction: 'asc' | 'desc' = 'desc',
   limit = 20,
   continent?: string,
+  timeoutMs?: number,
 ): Promise<RankingRow[]> {
   const key = cacheKey('worldbank:ranking', { indicator, direction, limit, continent });
   return cached(key, 86_400, async () => {
@@ -545,6 +546,8 @@ export async function getRanking(
     const raw = await fetchUpstream<WorldBankResponse>(url, {
       provider: 'World Bank',
       revalidate: 86_400,
+      timeoutMs,
+      retries: timeoutMs ? 0 : 2,
     });
     return (raw?.[1] ?? [])
       .filter(
@@ -569,12 +572,12 @@ export async function getRanking(
 }
 
 /** Scatter data for the correlation explorer: two indicators joined by country. */
-export async function getCorrelation(x: string, y: string, continent?: string) {
+export async function getCorrelation(x: string, y: string, continent?: string, timeoutMs?: number) {
   const key = cacheKey('worldbank:correlation', { x, y, continent });
   return cached(key, 86_400, async () => {
     const [xs, ys] = await Promise.all([
-      getRanking(x, 'desc', 250, continent),
-      getRanking(y, 'desc', 250, continent),
+      getRanking(x, 'desc', 250, continent, timeoutMs),
+      getRanking(y, 'desc', 250, continent, timeoutMs),
     ]);
     const yByCode = new Map(ys.map((row) => [row.code, row]));
     return xs

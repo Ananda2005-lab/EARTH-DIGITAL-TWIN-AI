@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 
 import { AdminPagination } from '@/components/admin/admin-pagination';
 import { AiLogFlagButton } from '@/components/admin/ai-log-flag-button';
+import { AiLogsFlaggedToggle } from '@/components/admin/ai-log-flagged-toggle';
 import { RequireAuthNotice } from '@/components/data/require-auth-notice';
 import { PageHeader } from '@/components/layout/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -73,6 +74,7 @@ export default function AdminAiLogsPage({ searchParams }: { searchParams: AiLogs
         eyebrow={<Badge variant="primary">Administration</Badge>}
         title="AI Logs"
         description="Every AI interaction with token spend, latency and moderation flags."
+        actions={<AiLogsFlaggedToggle checked={searchParams.flaggedOnly === 'true'} />}
       />
 
       <Suspense fallback={<AiLogsSkeleton />}>

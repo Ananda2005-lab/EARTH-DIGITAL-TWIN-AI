@@ -103,7 +103,7 @@ export default async function WorkspacePage() {
         </div>
       )}
 
-      <WorkspacePreviewSection />
+      {!workspaces ? <WorkspacePreviewSection /> : null}
     </PageContainer>
   );
 }
@@ -137,9 +137,8 @@ function WorkspaceTile({ workspace }: { workspace: Workspace }) {
 }
 
 /**
- * Sample-data walkthrough of the finished feature. Rendered unconditionally
- * (signed in or not) so reviewers can see the intended UI without a live
- * session — none of this data is fetched.
+ * Sample-data walkthrough shown only when signed out, so signed-in users see
+ * only their real data — none of this is fetched.
  */
 function WorkspacePreviewSection() {
   return (

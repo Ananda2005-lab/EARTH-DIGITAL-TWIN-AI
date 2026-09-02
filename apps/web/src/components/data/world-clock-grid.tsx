@@ -11,8 +11,12 @@ interface TimezoneEntry {
   label: string;
 }
 
+<<<<<<< HEAD
 const TIMEZONES: TimezoneEntry[] = [
   // Pacific
+=======
+export const TIMEZONES: TimezoneEntry[] = [
+>>>>>>> 005c357b565eaf6ff99b0cc04ff8ed07cf1d64a0
   { tz: 'Pacific/Midway', label: 'Midway Atoll' },
   { tz: 'Etc/GMT+11', label: 'Samoa' },
   { tz: 'Pacific/Honolulu', label: 'Honolulu' },
