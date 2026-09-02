@@ -1,0 +1,1 @@
+[25340:25628:0811/124907.338:ERROR:components\headless\command_handler\headless_command_handler.cc:266] Failed to write file images\after-current.png: The system cannot find the path specified. (0x3)

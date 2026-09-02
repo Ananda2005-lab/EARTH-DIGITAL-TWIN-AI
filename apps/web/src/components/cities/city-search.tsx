@@ -11,9 +11,9 @@ import { fuzzyMatch } from '@/lib/utils';
 import type { CityLite } from '@/server/providers/cities';
 
 /**
- * Client-side filter over the curated city list. The dataset is tiny (~40
- * entries) so there is no debouncing or async lookup — every keystroke just
- * re-filters the array in memory.
+ * Client-side filter over the curated city list. The dataset is tiny so
+ * there is no debouncing or async lookup — every keystroke just re-filters
+ * the array in memory.
  */
 export function CitySearch({ cities }: { cities: CityLite[] }) {
   const [query, setQuery] = React.useState('');
@@ -27,14 +27,15 @@ export function CitySearch({ cities }: { cities: CityLite[] }) {
 
   return (
     <div>
-      <Input
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        leading={<Search />}
-        placeholder="Search cities or country codes…"
-        aria-label="Search cities"
-        className="mb-6 max-w-sm"
-      />
+      <div className="mb-6 max-w-sm">
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          leading={<Search />}
+          placeholder="Search cities or country codes…"
+          aria-label="Search cities"
+        />
+      </div>
 
       {filtered.length === 0 ? (
         <Card className="p-10 text-center">

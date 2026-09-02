@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { VersioningType, type INestApplication } from '@nestjs/common';
+import { type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -143,14 +143,9 @@ async function bootstrap(): Promise<void> {
   });
 
   app.setGlobalPrefix(GLOBAL_PREFIX, { exclude: ['api/docs', 'api/docs/json'] });
-  // The major version lives in the path prefix (`/api/v1`). Header versioning is
-  // enabled on top of it so a future minor revision of a single endpoint can be
-  // introduced with `x-api-version` without moving every other route.
-  app.enableVersioning({
-    type: VersioningType.HEADER,
-    header: 'x-api-version',
-    defaultVersion: '1',
-  });
+  // The major version lives in the path prefix (`/api/v1`). No controller
+  // declares an explicit version, so no versioning scheme is enabled on top:
+  // header versioning would 404 every request lacking `x-api-version`.
 
   configureSwagger(app, config);
 

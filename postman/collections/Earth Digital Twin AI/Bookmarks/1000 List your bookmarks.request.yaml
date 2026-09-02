@@ -1,0 +1,25 @@
+$kind: http-request
+name: 'List your bookmarks'
+method: GET
+url: '{{baseUrl}}/bookmarks'
+order: 1000
+queryParams:
+  - key: page
+    value: '1'
+  - key: pageSize
+    value: '24'
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{accessToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Expected HTTP status", function () { pm.expect(pm.response.code).to.eql(200); });
+      if (pm.response.code !== 204) {
+        let json;
+        pm.test("Response body is valid JSON", function () { json = pm.response.json(); pm.expect(json).to.be.an("object"); });
+        pm.test("Response exposes endpoint data", function () { pm.expect(json).to.have.any.keys("data", "status", "message", "id", "items", "tokens"); });
+      }

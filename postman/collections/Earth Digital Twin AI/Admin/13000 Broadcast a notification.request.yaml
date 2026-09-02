@@ -1,0 +1,33 @@
+$kind: http-request
+name: 'Broadcast a notification'
+method: POST
+url: '{{baseUrl}}/admin/notifications/broadcast'
+order: 13000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{adminAccessToken}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+      {
+        "kind": "system",
+        "severity": "info",
+        "title": "Platform update",
+        "body": "A platform update is available.",
+        "audience": "all"
+      }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Expected HTTP status", function () { pm.expect(pm.response.code).to.eql(201); });
+      if (pm.response.code !== 204) {
+        let json;
+        pm.test("Response body is valid JSON", function () { json = pm.response.json(); pm.expect(json).to.be.an("object"); });
+        pm.test("Response exposes endpoint data", function () { pm.expect(json).to.have.any.keys("data", "status", "message", "id", "items", "tokens"); });
+      }

@@ -8,6 +8,8 @@ import type { CountryOutline } from './country-geometry';
 import type { FlyToTarget } from './globe-camera';
 import { textureForBasemap } from './basemap-textures';
 import { GlobeHud } from './globe-hud';
+import { LIVE_SOURCES } from './data-points-layer';
+import { useLayerSelection } from './layers';
 
 const GlobeScene = dynamic(() => import('./globe-scene').then((mod) => mod.GlobeScene), {
   ssr: false,
@@ -37,7 +39,16 @@ export function GlobeShell({ initialHazards }: { initialHazards: HazardEvent[] }
   const [selectedHazard, setSelectedHazard] = React.useState<HazardEvent | null>(null);
   const [flyTo, setFlyTo] = React.useState<FlyToTarget | null>(null);
   const [autoRotate, setAutoRotate] = React.useState(true);
+  const { enabledIds, toggle, isEnabled } = useLayerSelection();
   const nonceRef = React.useRef(0);
+
+  const liveLayers = React.useMemo(
+    () =>
+      Object.keys(LIVE_SOURCES)
+        .filter(isEnabled)
+        .map((id) => ({ id, accent: ACCENT_BY_LAYER[id] ?? '#e2e8f0' })),
+    [isEnabled],
+  );
 
   const flyToPoint = React.useCallback((center: LngLat, distance?: number) => {
     nonceRef.current += 1;
@@ -70,6 +81,10 @@ export function GlobeShell({ initialHazards }: { initialHazards: HazardEvent[] }
         hazards={hazards}
         flyTo={flyTo}
         autoRotate={autoRotate}
+        showBorders={isEnabled('borders')}
+        showGraticule={isEnabled('graticule')}
+        showDayNight={isEnabled('day_night')}
+        liveLayers={liveLayers}
         onHoverCountry={setHoveredCountry}
         onSelectCountry={handleSelectCountry}
         onSelectHazard={handleSelectHazard}
@@ -89,6 +104,8 @@ export function GlobeShell({ initialHazards }: { initialHazards: HazardEvent[] }
         autoRotate={autoRotate}
         onToggleAutoRotate={() => setAutoRotate((value) => !value)}
         onFlyTo={flyToPoint}
+        layerIds={enabledIds}
+        onToggleLayer={toggle}
         onCloseInfo={() => {
           setSelectedCountry(null);
           setSelectedHazard(null);
@@ -97,3 +114,13 @@ export function GlobeShell({ initialHazards }: { initialHazards: HazardEvent[] }
     </div>
   );
 }
+
+/** Accent colours mirrored from the shared catalogue for marker dots. */
+const ACCENT_BY_LAYER: Record<string, string> = {
+  flights: '#facc15',
+  ships: '#38bdf8',
+  airports: '#fdba74',
+  seaports: '#7dd3fc',
+  satellites: '#c4b5fd',
+  iss: '#e879f9',
+};

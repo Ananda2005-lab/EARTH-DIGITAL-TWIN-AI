@@ -8,21 +8,21 @@ import { getMajorCities } from '@/server/providers/cities';
 export const metadata: Metadata = {
   title: 'Cities',
   description:
-    'Urban intelligence starting with the world\u2019s major cities, while the full 40,000-city gazetteer comes online.',
+    'Urban intelligence for major cities worldwide with live data on population, geography, climate and economy.',
 };
 
-// Backed entirely by the bundled curated dataset, so this renders statically.
-export const revalidate = 86_400;
+// Reads live from the backend API, so this renders per request.
+export const dynamic = 'force-dynamic';
 
 export default async function CitiesPage() {
-  const cities = await getMajorCities();
+  const cities = await getMajorCities(500); // Fetch up to 500 major cities
 
   return (
     <PageContainer>
       <PageHeader
         eyebrow={<Badge variant="primary">{cities.length} cities</Badge>}
         title="Cities"
-        description="A curated set of major world cities, ordered by population. The full gazetteer of 40,000 cities is coming soon."
+        description="The world's major urban centers, ordered by population. Search by name or country code. The vendored gazetteer grows with every sync — run `scripts/build-city-index.mjs` to pull the full Wikidata set."
       />
 
       <CitySearch cities={cities} />

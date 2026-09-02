@@ -1,0 +1,94 @@
+name: 'Local Development'
+values:
+  - key: baseUrl
+    value: 'http://localhost:4000/api/v1'
+    enabled: true
+    type: default
+  - key: aiServiceUrl
+    value: 'http://localhost:8000'
+    enabled: true
+    type: default
+  - key: demoEmail
+    value: 'demo@earthdigitaltwin.ai'
+    enabled: true
+    type: default
+  - key: demoPassword
+    value: ''
+    enabled: true
+    type: secret
+  - key: adminEmail
+    value: 'admin@earthdigitaltwin.ai'
+    enabled: true
+    type: default
+  - key: adminPassword
+    value: ''
+    enabled: true
+    type: secret
+  - key: ownerEmail
+    value: 'owner@earthdigitaltwin.ai'
+    enabled: true
+    type: default
+  - key: ownerPassword
+    value: ''
+    enabled: true
+    type: secret
+  - key: accessToken
+    value: ''
+    enabled: true
+    type: secret
+  - key: refreshToken
+    value: ''
+    enabled: true
+    type: secret
+  - key: adminAccessToken
+    value: ''
+    enabled: true
+    type: secret
+  - key: ownerAccessToken
+    value: ''
+    enabled: true
+    type: secret
+  - key: userId
+    value: '00000000-0000-4000-8000-000000000001'
+    enabled: true
+    type: default
+  - key: conversationId
+    value: '00000000-0000-4000-8000-000000000001'
+    enabled: true
+    type: default
+  - key: bookmarkId
+    value: '00000000-0000-4000-8000-000000000001'
+    enabled: true
+    type: default
+  - key: workspaceId
+    value: '00000000-0000-4000-8000-000000000001'
+    enabled: true
+    type: default
+  - key: reportId
+    value: '00000000-0000-4000-8000-000000000001'
+    enabled: true
+    type: default
+  - key: notificationId
+    value: '00000000-0000-4000-8000-000000000001'
+    enabled: true
+    type: default
+  - key: cityId
+    value: '00000000-0000-4000-8000-000000000001'
+    enabled: true
+    type: default
+  - key: countryCode
+    value: 'IN'
+    enabled: true
+    type: default
+  - key: sessionId
+    value: '00000000-0000-4000-8000-000000000001'
+    enabled: true
+    type: default
+  - key: featureFlagKey
+    value: 'globe.time_machine'
+    enabled: true
+    type: default
+  - key: maxResponseTime
+    value: '5000'
+    enabled: true
+    type: default

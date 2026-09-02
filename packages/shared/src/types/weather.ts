@@ -33,6 +33,8 @@ export interface WeatherNow {
   precipitation: number;
   /** Visibility in metres. */
   visibility: number;
+  /** Dew point in °C when the provider supplies it. */
+  dewPoint?: number;
   uvIndex: number;
   isDay: boolean;
   condition: WeatherCondition;

@@ -12,31 +12,83 @@ interface TimezoneEntry {
 }
 
 const TIMEZONES: TimezoneEntry[] = [
+  // Pacific
   { tz: 'Pacific/Midway', label: 'Midway Atoll' },
+  { tz: 'Etc/GMT+11', label: 'Samoa' },
   { tz: 'Pacific/Honolulu', label: 'Honolulu' },
+  { tz: 'Pacific/Marquesas', label: 'Marquesas' },
   { tz: 'America/Anchorage', label: 'Anchorage' },
+  { tz: 'America/Juneau', label: 'Juneau' },
+  { tz: 'America/Metlakatla', label: 'Ketchikan' },
+
+  // Pacific/Mountain/Central US
   { tz: 'America/Los_Angeles', label: 'Los Angeles' },
+  { tz: 'America/Vancouver', label: 'Vancouver' },
+  { tz: 'America/Phoenix', label: 'Phoenix' },
   { tz: 'America/Denver', label: 'Denver' },
+  { tz: 'America/Edmonton', label: 'Edmonton' },
   { tz: 'America/Chicago', label: 'Chicago' },
+  { tz: 'America/Mexico_City', label: 'Mexico City' },
+
+  // Eastern/Atlantic
   { tz: 'America/New_York', label: 'New York' },
+  { tz: 'America/Toronto', label: 'Toronto' },
+  { tz: 'America/Bogota', label: 'Bogotá' },
+  { tz: 'America/Lima', label: 'Lima' },
   { tz: 'America/Sao_Paulo', label: 'São Paulo' },
+  { tz: 'America/Argentina/Buenos_Aires', label: 'Buenos Aires' },
+  { tz: 'Atlantic/Stanley', label: 'Stanley' },
+
+  // Atlantic/Europe
+  { tz: 'Atlantic/Azores', label: 'Azores' },
+  { tz: 'Atlantic/Cape_Verde', label: 'Cape Verde' },
   { tz: 'Atlantic/Reykjavik', label: 'Reykjavík' },
+  { tz: 'Atlantic/St_Helena', label: 'St. Helena' },
+  { tz: 'Europe/Lisbon', label: 'Lisbon' },
   { tz: 'Europe/London', label: 'London' },
+  { tz: 'Europe/Dublin', label: 'Dublin' },
+  { tz: 'Africa/Casablanca', label: 'Casablanca' },
+
+  // Central Europe/Africa
   { tz: 'Europe/Paris', label: 'Paris' },
   { tz: 'Europe/Berlin', label: 'Berlin' },
-  { tz: 'Europe/Athens', label: 'Athens' },
-  { tz: 'Europe/Moscow', label: 'Moscow' },
-  { tz: 'Africa/Cairo', label: 'Cairo' },
+  { tz: 'Europe/Amsterdam', label: 'Amsterdam' },
+  { tz: 'Europe/Brussels', label: 'Brussels' },
+  { tz: 'Europe/Vienna', label: 'Vienna' },
+  { tz: 'Europe/Madrid', label: 'Madrid' },
+  { tz: 'Europe/Rome', label: 'Rome' },
+  { tz: 'Europe/Prague', label: 'Prague' },
+  { tz: 'Europe/Warsaw', label: 'Warsaw' },
+  { tz: 'Europe/Budapest', label: 'Budapest' },
   { tz: 'Africa/Lagos', label: 'Lagos' },
+  { tz: 'Africa/Cairo', label: 'Cairo' },
   { tz: 'Africa/Johannesburg', label: 'Johannesburg' },
+
+  // Eastern Europe/Asia
+  { tz: 'Europe/Athens', label: 'Athens' },
+  { tz: 'Europe/Istanbul', label: 'Istanbul' },
+  { tz: 'Europe/Moscow', label: 'Moscow' },
   { tz: 'Asia/Dubai', label: 'Dubai' },
   { tz: 'Asia/Kolkata', label: 'Mumbai' },
+  { tz: 'Asia/Kolkata', label: 'Delhi' },
   { tz: 'Asia/Bangkok', label: 'Bangkok' },
+  { tz: 'Asia/Jakarta', label: 'Jakarta' },
+
+  // East Asia
   { tz: 'Asia/Shanghai', label: 'Shanghai' },
+  { tz: 'Asia/Hong_Kong', label: 'Hong Kong' },
+  { tz: 'Asia/Singapore', label: 'Singapore' },
+  { tz: 'Asia/Manila', label: 'Manila' },
   { tz: 'Asia/Tokyo', label: 'Tokyo' },
   { tz: 'Asia/Seoul', label: 'Seoul' },
+
+  // Oceania
   { tz: 'Australia/Perth', label: 'Perth' },
+  { tz: 'Australia/Adelaide', label: 'Adelaide' },
+  { tz: 'Australia/Brisbane', label: 'Brisbane' },
   { tz: 'Australia/Sydney', label: 'Sydney' },
+  { tz: 'Australia/Melbourne', label: 'Melbourne' },
+  { tz: 'Pacific/Fiji', label: 'Fiji' },
   { tz: 'Pacific/Auckland', label: 'Auckland' },
 ];
 
@@ -50,7 +102,7 @@ interface TimeDetails {
 
 /**
  * Every tile shares one ticking clock rather than each running its own
- * `setInterval`, so 26 cards cost one timer instead of 26.
+ * `setInterval`, so 50+ cards cost one timer instead of 50+.
  */
 export function WorldClockGrid() {
   const [now, setNow] = React.useState<Date | null>(null);
@@ -69,7 +121,7 @@ export function WorldClockGrid() {
   }, [now]);
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
       {entries.map(({ entry, details }) => (
         <ClockTile key={entry.tz} entry={entry} details={details} />
       ))}

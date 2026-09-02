@@ -84,4 +84,18 @@ export class WeatherController {
     const [elevation] = await this.weather.elevation([{ lng: query.lng, lat: query.lat }]);
     return { elevationM: elevation ?? null };
   }
+
+  @Get('air-quality')
+  @CacheTtl(600)
+  @Attribution('CAMS · Open-Meteo')
+  @ApiOperation({
+    summary: 'Air quality at a coordinate',
+    description: 'Current conditions and hourly forecast for key pollutants.',
+  })
+  @ApiOkResponse({ description: 'Air quality bundle' })
+  @ApiResponse({ status: 422, description: 'Invalid coordinate' })
+  @ApiResponse({ status: 503, description: 'Upstream provider unavailable' })
+  async airQuality(@Query() query: PointQueryDto): Promise<import('@edt/shared').AirQualityBundle> {
+    return this.weather.airQuality({ lng: query.lng, lat: query.lat }, query.timezone ?? 'auto');
+  }
 }

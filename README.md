@@ -25,7 +25,7 @@ infra/docker      Local Postgres + Redis
 ```bash
 npm install
 
-# Postgres (PostGIS) on 5432 and Redis on 6379, bound to localhost only
+# Postgres (PostGIS) on 5435 and Redis on 6382, bound to localhost only
 npm run docker:up
 
 cp apps/api/.env.example apps/api/.env

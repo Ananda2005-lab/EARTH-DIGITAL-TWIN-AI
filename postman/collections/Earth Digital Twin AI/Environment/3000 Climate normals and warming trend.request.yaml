@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Climate normals and warming trend'
+method: GET
+url: '{{baseUrl}}/environment/climate'
+order: 3000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{accessToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Expected HTTP status", function () { pm.expect(pm.response.code).to.eql(200); });
+      if (pm.response.code !== 204) {
+        let json;
+        pm.test("Response body is valid JSON", function () { json = pm.response.json(); pm.expect(json).to.be.an("object"); });
+        pm.test("Response exposes endpoint data", function () { pm.expect(json).to.have.any.keys("data", "status", "message", "id", "items", "tokens"); });
+      }

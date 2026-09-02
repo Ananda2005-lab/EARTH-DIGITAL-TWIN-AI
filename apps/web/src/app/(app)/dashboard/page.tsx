@@ -1,9 +1,11 @@
 import { formatCompact, formatNumber, formatRelativeTime, NAV_ITEMS } from '@edt/shared';
-import { Activity, Plane, Radio, Ship, TriangleAlert } from 'lucide-react';
+import { Activity, Plane, Radio, Satellite, Ship, Sparkles, Sun, TriangleAlert } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
+import { AutoRefresh } from '@/components/dashboard/auto-refresh';
+import { MissionClock } from '@/components/dashboard/mission-clock';
 import { HazardKindIcon, SeverityBadge } from '@/components/data/severity-badge';
 import { StatCard, StatCardSkeleton } from '@/components/data/stat-card';
 import { PageContainer, PageHeader, Section } from '@/components/layout/page-header';
@@ -12,10 +14,11 @@ import { LiveBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { KpIndexChart } from '@/app/(app)/space/kp-index-chart';
 import { getFlights } from '@/server/providers/flights';
 import { getHazardFeed } from '@/server/providers/hazards';
 import { getVessels } from '@/server/providers/maritime';
-import { getSpaceWeather } from '@/server/providers/space';
+import { getIssState, getSpaceWeather } from '@/server/providers/space';
 
 export const metadata: Metadata = {
   title: 'Mission Control',
@@ -28,76 +31,99 @@ export const dynamic = 'force-dynamic';
 
 export default function DashboardPage() {
   return (
-    <PageContainer>
-      <PageHeader
-        eyebrow={<LiveBadge label="Streaming" />}
-        title="Mission Control"
-        description="One situation room for the planet: what is happening right now, where it is happening, and what it means."
-        actions={
-          <>
-            <Button variant="glass" size="sm" asChild>
-              <Link href="/globe">Open globe</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link href="/ai">Ask the assistant</Link>
-            </Button>
-          </>
-        }
-      />
+    <AutoRefresh>
+      <PageContainer>
+        <PageHeader
+          eyebrow={
+            <div className="flex items-center gap-2">
+              <LiveBadge label="Streaming" />
+              <MissionClock />
+            </div>
+          }
+          title="Mission Control"
+          description="One situation room for the planet: what is happening right now, where it is happening, and what it means."
+          actions={
+            <>
+              <Button variant="glass" size="sm" asChild>
+                <Link href="/globe">Open globe</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/ai">Ask the assistant</Link>
+              </Button>
+            </>
+          }
+        />
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Suspense fallback={<StatCardSkeleton />}>
-          <HazardStat />
-        </Suspense>
-        <Suspense fallback={<StatCardSkeleton />}>
-          <FlightStat />
-        </Suspense>
-        <Suspense fallback={<StatCardSkeleton />}>
-          <VesselStat />
-        </Suspense>
-        <Suspense fallback={<StatCardSkeleton />}>
-          <SpaceWeatherStat />
-        </Suspense>
-      </div>
-
-      <div className="mb-8 grid gap-4 lg:grid-cols-3">
-        <Suspense fallback={<PanelSkeleton rows={6} className="lg:col-span-2" />}>
-          <SignificantHazards />
-        </Suspense>
-        <Suspense fallback={<PanelSkeleton rows={4} />}>
-          <SpaceWeatherPanel />
-        </Suspense>
-      </div>
-
-      <Section title="Jump back in" description="Every module shares the same spatial context.">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {NAV_ITEMS.filter((item) => item.group === 'explore' || item.group === 'monitor')
-            .slice(0, 8)
-            .map((item) => (
-              <Link
-                key={item.id}
-                href={item.href}
-                className="focus-visible:ring-ring rounded-2xl outline-none focus-visible:ring-2"
-              >
-                <Card interactive className="h-full p-4">
-                  <div className="flex items-center gap-2.5">
-                    <NavIcon name={item.icon} className="text-primary size-4 shrink-0" />
-                    <span className="display-tight truncate text-sm">{item.label}</span>
-                    {item.badge === 'live' ? <LiveBadge className="ml-auto" /> : null}
-                  </div>
-                  <p className="text-muted-foreground mt-2 line-clamp-2 text-xs leading-relaxed">
-                    {item.description}
-                  </p>
-                </Card>
-              </Link>
-            ))}
+        {/* ── Row 1: Six stat tiles ─────────────────────────────── */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+          <Suspense fallback={<StatCardSkeleton />}>
+            <HazardStat />
+          </Suspense>
+          <Suspense fallback={<StatCardSkeleton />}>
+            <FlightStat />
+          </Suspense>
+          <Suspense fallback={<StatCardSkeleton />}>
+            <VesselStat />
+          </Suspense>
+          <Suspense fallback={<StatCardSkeleton />}>
+            <SpaceWeatherStat />
+          </Suspense>
+          <Suspense fallback={<StatCardSkeleton />}>
+            <SunspotStat />
+          </Suspense>
+          <Suspense fallback={<StatCardSkeleton />}>
+            <IssStat />
+          </Suspense>
         </div>
-      </Section>
-    </PageContainer>
+
+        {/* ── Situation brief: auto-generated from the same live feeds ── */}
+        <div className="mb-8">
+          <Suspense fallback={<PanelSkeleton rows={3} />}>
+            <SituationBrief />
+          </Suspense>
+        </div>
+
+        {/* ── Row 2: Events + Space weather with Kp chart ──── */}
+        <div className="mb-8 grid gap-4 lg:grid-cols-3">
+          <Suspense fallback={<PanelSkeleton rows={6} className="lg:col-span-2" />}>
+            <SignificantHazards />
+          </Suspense>
+          <Suspense fallback={<PanelSkeleton rows={4} />}>
+            <SpaceWeatherPanel />
+          </Suspense>
+        </div>
+
+        {/* ── Row 3: Quick navigation ─────────────────────────── */}
+        <Section title="Jump back in" description="Every module shares the same spatial context.">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {NAV_ITEMS.filter((item) => item.group === 'explore' || item.group === 'monitor')
+              .slice(0, 8)
+              .map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className="focus-visible:ring-ring rounded-2xl outline-none focus-visible:ring-2"
+                >
+                  <Card interactive className="h-full p-4">
+                    <div className="flex items-center gap-2.5">
+                      <NavIcon name={item.icon} className="text-primary size-4 shrink-0" />
+                      <span className="display-tight truncate text-sm">{item.label}</span>
+                      {item.badge === 'live' ? <LiveBadge className="ml-auto" /> : null}
+                    </div>
+                    <p className="text-muted-foreground mt-2 line-clamp-2 text-xs leading-relaxed">
+                      {item.description}
+                    </p>
+                  </Card>
+                </Link>
+              ))}
+          </div>
+        </Section>
+      </PageContainer>
+    </AutoRefresh>
   );
 }
 
-// ── Stat tiles ───────────────────────────────────────────────────────────────
+// ── Stat tiles ───────────────────────────────────────────────────────
 
 async function HazardStat() {
   const feed = await getHazardFeed({ hours: 24, limit: 400 });
@@ -157,12 +183,134 @@ async function SpaceWeatherStat() {
   );
 }
 
+async function SunspotStat() {
+  const space = await getSpaceWeather();
+  const sunspots = space.sunspotNumber ?? 0;
+  return (
+    <StatCard
+      label="Sunspot number"
+      value={String(sunspots)}
+      icon={<Sun />}
+      intent={sunspots > 150 ? 'warning' : 'neutral'}
+      hint={space.radioFlux ? `F10.7 ${space.radioFlux.toFixed(0)} SFU` : 'NOAA SWPC · F10.7 flux'}
+    />
+  );
+}
+
+async function IssStat() {
+  const iss = await getIssState();
+  if (!iss) {
+    return (
+      <StatCard label="ISS altitude" value="—" icon={<Satellite />} hint="ISS tracking unavailable" />
+    );
+  }
+  return (
+    <StatCard
+      label="ISS altitude"
+      value={iss.altitudeKm.toFixed(1)}
+      unit="km"
+      icon={<Satellite />}
+      intent="positive"
+      hint={`${formatNumber(Math.round(iss.velocityKmh))} km/h`}
+    />
+  );
+}
+
 /** `minor_storm` reads badly in a UI; the enum stays machine-friendly instead. */
 function humanKpBand(band: string): string {
   return band.replace(/_/g, ' ');
 }
 
-// ── Panels ───────────────────────────────────────────────────────────────────
+// ── Panels ───────────────────────────────────────────────────────────
+
+/**
+ * Auto-generated natural-language briefing. Reads the exact same cached feeds
+ * as the stat tiles (single-flight cache dedupes them), so it costs zero extra
+ * upstream calls.
+ */
+async function SituationBrief() {
+  const [feed, space, flights, iss] = await Promise.all([
+    getHazardFeed({ hours: 24, limit: 400 }),
+    getSpaceWeather(),
+    getFlights({ limit: 1 }),
+    getIssState(),
+  ]);
+
+  const severe = feed.events.filter(
+    (event) => event.severity === 'high' || event.severity === 'extreme',
+  );
+  const top = severe[0] ?? feed.events[0];
+  const kindCounts = new Map<string, number>();
+  for (const event of feed.events) {
+    kindCounts.set(event.kind, (kindCounts.get(event.kind) ?? 0) + 1);
+  }
+  const topKinds = [...kindCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2);
+  const utcNow = `${new Date().toUTCString().slice(17, 25)} UTC`;
+
+  const sentences: string[] = [
+    `As of ${utcNow}, ${formatCompact(feed.total)} hazards are under active watch worldwide${
+      topKinds.length > 0
+        ? ` — mostly ${topKinds
+            .map(([kind, count]) => `${count} ${kind}${count === 1 ? '' : 's'}`)
+            .join(' and ')}`
+        : ''
+    }.`,
+    severe.length > 0 && top
+      ? `${formatNumber(severe.length)} ${severe.length === 1 ? 'event is' : 'events are'} severe — led by "${top.title}"${top.place ? ` near ${top.place}` : ''}.`
+      : top
+        ? `Nothing severe right now; the most notable event is "${top.title}"${top.place ? ` near ${top.place}` : ''}.`
+        : 'No significant hazards reported in the last 24 hours.',
+    `The geomagnetic field is ${humanKpBand(space.kpBand)} (Kp ${space.kpIndex.toFixed(1)}) — aurora possible above ${space.auroraVisibleAboveLat.toFixed(0)}° latitude.`,
+    `${formatCompact(flights.total)} aircraft are airborne right now${
+      iss
+        ? `, and the ISS is holding a ${iss.altitudeKm.toFixed(0)} km orbit at ${formatNumber(Math.round(iss.velocityKmh))} km/h`
+        : ''
+    }.`,
+  ];
+
+  const watchPoints = (severe.length > 0 ? severe : feed.events).slice(0, 3);
+
+  return (
+    <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-transparent to-transparent">
+      <CardHeader className="flex-row items-center justify-between">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="text-primary size-4" />
+            Situation brief
+          </CardTitle>
+          <p className="text-muted-foreground mt-1 text-xs">
+            Auto-generated from the live feeds on this page · refreshes every 60 s
+          </p>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-6 pt-0 lg:grid-cols-[1.6fr_1fr]">
+        <div className="space-y-2.5">
+          {sentences.map((sentence) => (
+            <p key={sentence} className="text-sm leading-relaxed">
+              {sentence}
+            </p>
+          ))}
+        </div>
+        {watchPoints.length > 0 && (
+          <div>
+            <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wide">
+              Watch points
+            </p>
+            <ul className="space-y-2">
+              {watchPoints.map((event) => (
+                <li key={event.id} className="flex items-center gap-2.5">
+                  <HazardKindIcon kind={event.kind} />
+                  <span className="min-w-0 flex-1 truncate text-sm">{event.title}</span>
+                  <SeverityBadge severity={event.severity} className="shrink-0" />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 async function SignificantHazards() {
   const feed = await getHazardFeed({ hours: 48, minSeverity: 'moderate', limit: 12 });
@@ -235,6 +383,16 @@ async function SpaceWeatherPanel() {
         <p className="text-muted-foreground text-xs">NOAA SWPC · updated every 15 minutes</p>
       </CardHeader>
       <CardContent className="pt-0">
+        {/* Kp sparkline — reuses the bar chart from the /space page */}
+        {space.series.length > 0 && (
+          <div className="mb-4">
+            <p className="text-muted-foreground mb-2 text-xs">
+              Kp index · last {space.series.length} readings
+            </p>
+            <KpIndexChart series={space.series} />
+          </div>
+        )}
+
         <dl className="divide-border/60 divide-y">
           {rows.map((row) => (
             <div key={row.label} className="flex items-center justify-between gap-3 py-2.5">

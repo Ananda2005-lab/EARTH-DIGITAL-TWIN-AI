@@ -19,7 +19,8 @@ services:
       # Deterministic collation keeps trigram search ordering stable across hosts.
       POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C'
     ports:
-      - '127.0.0.1:5432:5432'
+      # Host port shifted off 5432 since other local projects already bind it.
+      - '127.0.0.1:5435:5432'
     volumes:
       - ./volumes/postgres:/var/lib/postgresql/data
     healthcheck:
@@ -35,7 +36,8 @@ services:
     # Cache and queue share the instance; AOF keeps queued jobs across restarts.
     command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
     ports:
-      - '127.0.0.1:6379:6379'
+      # Host port shifted off 6379 since other local projects already bind it.
+      - '127.0.0.1:6382:6379'
     volumes:
       - ./volumes/redis:/data
     healthcheck:

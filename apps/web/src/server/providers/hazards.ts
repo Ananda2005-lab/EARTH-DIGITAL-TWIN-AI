@@ -340,8 +340,18 @@ export async function getHazardFeed(options: HazardFetchOptions = {}): Promise<H
 
   const results = await Promise.all(tasks);
   const seen = new Set<string>();
+  const seenIds = new Set<string>();
+  const seenTitles = new Set<string>();
+  const normaliseTitle = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   let events = results
     .flat()
+    // Sort first so the most severe variant of a duplicated event survives.
+    .sort((a, b) => {
+      const severityDelta =
+        HAZARD_SEVERITY_ORDER.indexOf(b.severity) - HAZARD_SEVERITY_ORDER.indexOf(a.severity);
+      if (severityDelta !== 0) return severityDelta;
+      return new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime();
+    })
     .filter((event) => {
       if (!wants(event.kind)) return false;
       if (bbox && !bboxContains(bbox, event.location)) return false;
@@ -351,7 +361,19 @@ export async function getHazardFeed(options: HazardFetchOptions = {}): Promise<H
       ) {
         return false;
       }
-      // De-duplicate the same physical event reported by multiple providers.
+      // Exact-id duplicates (GDACS re-lists the same eventid per episode).
+      if (seenIds.has(event.id)) return false;
+      seenIds.add(event.id);
+      // Same physical event reported by multiple providers under slightly
+      // different coordinates/timestamps: collapse on kind + normalised title.
+      // FIRMS fire points are excluded — their titles are generic
+      // ("Active fire · 80 MW") and each point is a distinct detection.
+      if (!event.id.startsWith('fire:')) {
+        const titleKey = `${event.kind}:${normaliseTitle(event.title)}`;
+        if (seenTitles.has(titleKey)) return false;
+        seenTitles.add(titleKey);
+      }
+      // Spatial/time bucket: catches remaining duplicates with fuzzy titles.
       // Coerced with `Number(...)` because upstream JSON (GDACS in particular)
       // does not always guarantee numeric types for coordinate fields.
       const lat = Number(event.location.lat).toFixed(1);
@@ -360,12 +382,6 @@ export async function getHazardFeed(options: HazardFetchOptions = {}): Promise<H
       if (seen.has(bucket)) return false;
       seen.add(bucket);
       return true;
-    })
-    .sort((a, b) => {
-      const severityDelta =
-        HAZARD_SEVERITY_ORDER.indexOf(b.severity) - HAZARD_SEVERITY_ORDER.indexOf(a.severity);
-      if (severityDelta !== 0) return severityDelta;
-      return new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime();
     });
 
   const total = events.length;

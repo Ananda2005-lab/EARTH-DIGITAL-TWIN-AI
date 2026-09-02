@@ -1,0 +1,44 @@
+$kind: http-request
+name: 'Create a bookmark'
+method: POST
+url: '{{baseUrl}}/bookmarks'
+order: 2000
+queryParams:
+  - key: page
+    value: '1'
+  - key: pageSize
+    value: '24'
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{accessToken}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+      {
+        "name": "New Delhi",
+        "kind": "place",
+        "center": {
+          "lng": 77.209,
+          "lat": 28.6139
+        },
+        "tags": [
+          "capital"
+        ],
+        "color": "#38bdf8",
+        "pinned": false
+      }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Expected HTTP status", function () { pm.expect(pm.response.code).to.eql(201); });
+      if (pm.response.code !== 204) {
+        let json;
+        pm.test("Response body is valid JSON", function () { json = pm.response.json(); pm.expect(json).to.be.an("object"); });
+        pm.test("Response exposes endpoint data", function () { pm.expect(json).to.have.any.keys("data", "status", "message", "id", "items", "tokens"); });
+      }

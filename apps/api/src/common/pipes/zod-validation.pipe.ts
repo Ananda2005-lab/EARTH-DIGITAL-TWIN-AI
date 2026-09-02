@@ -1,4 +1,4 @@
-import { Injectable, type ArgumentMetadata, type PipeTransform } from '@nestjs/common';
+import { Injectable, Optional, type ArgumentMetadata, type PipeTransform } from '@nestjs/common';
 import { ZodError, type ZodTypeAny } from 'zod';
 import { AppException } from '../errors/app-exception';
 import { isZodDto } from '../zod/zod-dto';
@@ -18,7 +18,7 @@ export interface ZodIssueDetail {
  */
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
-  constructor(private readonly schema?: ZodTypeAny) {}
+  constructor(@Optional() private readonly schema?: ZodTypeAny) {}
 
   transform(value: unknown, metadata: ArgumentMetadata): unknown {
     const schema = this.schema ?? this.resolveSchema(metadata);

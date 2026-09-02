@@ -297,3 +297,21 @@ async function seedFeatureFlags(ownerId: string): Promise<void> {
   }
   console.log(`  ${FEATURE_FLAGS.length} feature flags`);
 }
+
+async function main(): Promise<void> {
+  console.log('Seeding Earth Digital Twin AI database...');
+  const users = await seedAccounts();
+  const ownerId = users.owner;
+  if (!ownerId) throw new Error('Owner account was not created');
+  await seedFeatureFlags(ownerId);
+  console.log(`Seed complete. Development account password: ${DEV_DEFAULT_PASSWORD}`);
+}
+
+main()
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

@@ -1,0 +1,29 @@
+$kind: http-request
+name: 'Confirm TOTP enrolment'
+method: POST
+url: '{{baseUrl}}/auth/mfa/verify'
+order: 15000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{accessToken}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+      {
+        "code": "123456"
+      }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Expected HTTP status", function () { pm.expect(pm.response.code).to.eql(201); });
+      if (pm.response.code !== 204) {
+        let json;
+        pm.test("Response body is valid JSON", function () { json = pm.response.json(); pm.expect(json).to.be.an("object"); });
+        pm.test("Response exposes endpoint data", function () { pm.expect(json).to.have.any.keys("data", "status", "message", "id", "items", "tokens"); });
+      }

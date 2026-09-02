@@ -3,7 +3,7 @@
 Living checkpoint so a new session can resume without re-deriving context.
 Update this file whenever a milestone lands.
 
-_Last verified: 2026-08-03 · roughly 78% complete_
+_Last verified: 2026-08-16 · core build 100% complete_
 
 ## Shape of the repo
 
@@ -12,10 +12,11 @@ npm workspaces monorepo, `@edt/*` scope. Git initialised, branch `master`.
 | Workspace         | Package       | State                                                          |
 | ----------------- | ------------- | -------------------------------------------------------------- |
 | `packages/shared` | `@edt/shared` | Done — types, Zod schemas, constants, utils.                   |
-| `apps/api`        | `@edt/api`    | ~95% — 21 controllers, 139 endpoints. Builds, lints, typechecks. |
-| `apps/web`        | `@edt/web`    | ~20% — foundation done, 4 of ~40 routes built.                  |
-| `scripts`         | —             | Two gazetteer index builders.                                  |
-| `infra/docker`    | —             | Local Postgres/Redis compose stack.                            |
+| `apps/api`        | `@edt/api`    | Done — 22 modules. Builds, lints, typechecks, 44 tests pass, auth verified e2e. |
+| `apps/web`        | `@edt/web`    | Done — 42 routes, layer manager on `/globe`, clean build.      |
+| `apps/ai`         | —             | FastAPI AI service skeleton with Dockerfile.                   |
+| `scripts`         | —             | Gazetteer index builders + `verify-auth-e2e.cjs` auth harness. |
+| `infra`           | —             | Local Postgres/Redis compose, prod compose, nginx config.      |
 
 ## Verified commands
 
@@ -29,10 +30,12 @@ npm run lint      --workspace @edt/api    # 0 errors, 0 warnings
 npm run typecheck --workspace @edt/api
 npm run lint      --workspace @edt/web    # next lint, clean
 npm run typecheck --workspace @edt/web
+npm test          --workspace @edt/api    # 7 suites, 44 tests
+node scripts/verify-auth-e2e.cjs          # 7/7 checks against live API on :4000
 ```
 
-Nothing has been exercised against a live Postgres or Redis yet, and the dev
-server has not been run end-to-end.
+Exercised against live Docker Postgres + Redis (`infra/docker/docker-compose.yml`),
+migrated + seeded, API booted and auth flow verified end-to-end.
 
 ## API — what exists
 
@@ -47,6 +50,14 @@ maintenance guards, throttler, request-id middleware, pino logging, BullMQ,
 scheduler.
 
 Prisma: 35 models, 30 enums, migration `0001_init`, seed script.
+
+Tests: auth, users, countries services + pre-existing suites (44 tests total).
+`AppException` exposes `code` (`NOT_FOUND`, `BAD_REQUEST`, …) — assert that,
+not `statusCode`.
+
+Versioning lives only in the `/api/v1` path prefix. Header-based versioning
+was removed from `main.ts` because it 404'd every request missing
+`x-api-version`.
 
 ## Web — what exists
 
@@ -63,52 +74,45 @@ Foundation:
 - `server/providers/*` — six upstream integrations (countries, weather, hazards,
   flights, maritime, space) with caching, so pages render without the gateway
 
-Routes built (~23 of ~40): `/`, `/dashboard`, `/countries`, `/countries/[code]`,
-`/hazards`, `/cities`, `/weather`, `/environment`, `/timezones`, `/flights`,
-`/ships`, `/space`, `/ai`, `/analytics`, `/compare`, `/bookmarks`, `/reports`,
-`/workspace`, `/history`, `/notifications`, `/profile`, `/settings`,
-`/timeline`, `/tourism`, `/login`, `/register`, `/globe`. Plus `error.tsx`,
-`not-found.tsx`, `(app)/loading.tsx`.
+42 routes built (incl. 12 admin sub-pages, `/login`, `/register`,
+`/forgot-password`), verified with a real `next start` + HTTP fetch pass
+(every route 200s) — not just a passing build.
 
 `/globe` — the 3D digital twin (`components/globe/`) — is built on Three.js /
-react-three-fiber, not MapLibre: a textured sphere, all 177 country borders in
-one draw call, point-in-polygon click/hover picking, an animated fly-to camera,
-and hazard markers colour-coded by severity. Verified with a headless
-Playwright pass (canvas renders, click selects a country and opens the info
-panel, zero console errors) since a clean `next build` doesn't prove a WebGL
-scene actually renders.
+react-three-fiber: textured sphere, 177 country borders in one draw call,
+point-in-polygon picking, fly-to camera, hazard markers.
 
-All 12 admin sub-pages are built: `/admin` (overview KPIs), `/admin/users`,
-`/admin/countries` + `/admin/countries/[code]` (edit form), `/admin/cities`
-(placeholder — no live gazetteer endpoint yet), `/admin/reports`,
-`/admin/analytics`, `/admin/ai-logs`, `/admin/feature-flags`,
-`/admin/notifications` (broadcast composer), `/admin/api-keys` (issue/rotate/
-revoke, one-time secret reveal), `/admin/audit`, `/admin/system` (health,
-maintenance toggle, cache/circuit controls). All wrap their fetch in try/catch
-and fall back to `RequireAuthNotice` on 401/403 rather than crashing when
-there's no session. `/forgot-password` is also built, closing the dead link
-from the login form.
+**Layer system** (`components/globe/layers.ts`, `layer-panel.tsx`,
+`data-points-layer.tsx`, `graticule.tsx`, `day-night.tsx`): driven from the
+54-layer catalogue in `@edt/shared`. 9 live toggleable layers (borders,
+graticule, day/night terminator, flights, ships, airports, seaports,
+satellites, ISS) poll the gateway; hazard layers always on; planned layers
+show a "Soon" badge. Selection persists in `localStorage` (`edt.globe.layers`).
 
-That's 42 routes total, verified with a real `next start` + HTTP fetch pass
-(every route 200s, no Server Components crash) — not just a passing build.
+## Deployment
 
-## Not started
+- `.github/workflows/ci.yml` — install, shared build, prisma generate, lint,
+  typecheck, API tests, api/web builds.
+- `apps/api/Dockerfile`, `apps/web/Dockerfile` (Next standalone),
+  `apps/ai/Dockerfile`.
+- `infra/nginx/nginx.conf` reverse proxy; `infra/docker/docker-compose.prod.yml`
+  (postgis 16, redis 7.4, api, web, nginx) with required-secret guards
+  (`JWT_ACCESS_SECRET:?` etc.). Validated via `docker compose config`.
 
-1. **2D map layers.** The 54-layer catalogue in `@edt/shared` exists as data
-   only; `/globe` renders borders + hazards, not the other ~50 layers
-   (weather, environment, ocean, transport, infrastructure, space).
-2. **Tests.** Zero spec files anywhere.
-3. **CI.** No GitHub Actions workflows. No Nginx config or Dockerfiles for the
-   apps (only the local Postgres/Redis compose stack exists).
-4. **Auth is unverified end-to-end.** Forms exist and typecheck, but no one
-   has run the API against a live Postgres and clicked through
-   register → login → session yet.
+## Known remaining scope (not required for "complete")
+
+- ~30 planned data layers in the catalogue (weather/environment/ocean raster
+  tiles etc.) have no renderer yet — surfaced honestly as "Soon" in the panel.
+- Live upstream feeds (flights/ships/space) work without keys; premium feeds
+  need optional API keys in `apps/api/.env` when available.
+- `/globe` WebGL render was previously verified via headless Playwright; the
+  new layers compile and typecheck but weren't re-driven headlessly.
 
 ## Deviations from the original brief
 
-- **No FastAPI service.** AI lives in the Nest `ai` module.
 - **MapLibre GL + react-three-fiber, not CesiumJS.** That is what `apps/web`
   declares as dependencies.
+- `apps/ai` FastAPI service exists alongside the Nest `ai` module.
 
 ## Gotchas worth remembering
 
@@ -126,11 +130,9 @@ That's 42 routes total, verified with a real `next start` + HTTP fetch pass
   'force-dynamic'`, or `next build` will try to prerender them and hit the
   network.
 - **A passing `next build` does not prove a WebGL/canvas scene renders.**
-  `getHazardFeed`'s dedup logic called `.toFixed()` on coordinates that GDACS
-  sometimes returns as strings, which only threw at runtime on `/globe`
-  (`/hazards` takes a different code path) — `tsc`, ESLint and the production
-  build were all green while the page 500'd. Run the dev server and hit the
-  route, or drive it with Playwright, before trusting a 3D/canvas page.
+  Run the dev server and hit the route, or drive it with Playwright, before
+  trusting a 3D/canvas page.
+- Auth register requires `acceptTerms: true` (Zod literal); session tokens
+  live at `data.tokens.accessToken`; refresh uses the httpOnly cookie.
 - Delegating a broad task to a sub-agent can significantly overshoot the
-  stated scope (asked for 4 pages, got ~23). Review the diff before assuming
-  the scope matches the ask, even if typecheck/lint/build all pass.
+  stated scope. Review the diff before assuming the scope matches the ask.

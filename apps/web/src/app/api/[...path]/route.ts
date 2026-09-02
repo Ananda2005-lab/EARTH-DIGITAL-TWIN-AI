@@ -27,6 +27,9 @@ const HOP_BY_HOP = new Set([
   'upgrade',
   'host',
   'content-length',
+  // Node fetch transparently decompresses upstream bodies. Relaying this header
+  // would make the browser try to decompress an already-decoded response.
+  'content-encoding',
 ]);
 
 const METHODS_WITH_BODY = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -43,6 +46,11 @@ function forwardHeaders(request: NextRequest): Headers {
   if (!existing && client) headers.set('x-forwarded-for', client);
   headers.set('x-forwarded-host', request.headers.get('host') ?? '');
   headers.set('x-forwarded-proto', request.nextUrl.protocol.replace(':', ''));
+
+  // The gateway uses header versioning in addition to its `/api/v1` prefix.
+  // Browser calls normally do not know about that transport detail, so supply
+  // the current version unless an explicit version was requested.
+  if (!headers.has('x-api-version')) headers.set('x-api-version', '1');
 
   return headers;
 }

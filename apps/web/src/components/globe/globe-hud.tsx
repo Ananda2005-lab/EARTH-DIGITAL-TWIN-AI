@@ -8,7 +8,7 @@ import {
   type HazardEvent,
   type LngLat,
 } from '@edt/shared';
-import { Compass, Layers, Pause, Play, Search, TriangleAlert, X } from 'lucide-react';
+import { Compass, Layers, Pause, Play, Search, SlidersHorizontal, TriangleAlert, X } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 
@@ -21,6 +21,7 @@ import { countryByCode, findCountries } from '@/lib/data/countries';
 import { cn } from '@/lib/utils';
 
 import type { CountryOutline } from './country-geometry';
+import { LayerPanel } from './layer-panel';
 
 export function GlobeHud({
   basemap,
@@ -33,6 +34,8 @@ export function GlobeHud({
   autoRotate,
   onToggleAutoRotate,
   onFlyTo,
+  layerIds,
+  onToggleLayer,
   onCloseInfo,
 }: {
   basemap: string;
@@ -45,8 +48,12 @@ export function GlobeHud({
   autoRotate: boolean;
   onToggleAutoRotate: () => void;
   onFlyTo: (center: LngLat, distance?: number) => void;
+  layerIds: string[];
+  onToggleLayer: (id: string) => void;
   onCloseInfo: () => void;
 }) {
+  const [layersOpen, setLayersOpen] = React.useState(false);
+
   return (
     <>
       <div className="z-overlay pointer-events-none absolute inset-x-0 top-0 flex justify-center px-4 pt-4">
@@ -67,6 +74,15 @@ export function GlobeHud({
         <BasemapMenu basemap={basemap} basemaps={basemaps} onChange={onBasemapChange} />
         <Button
           variant="glass"
+          size="sm"
+          onClick={() => setLayersOpen((value) => !value)}
+          aria-expanded={layersOpen}
+        >
+          <SlidersHorizontal />
+          Layers
+        </Button>
+        <Button
+          variant="glass"
           size="icon-sm"
           onClick={onToggleAutoRotate}
           aria-label={autoRotate ? 'Pause rotation' : 'Resume rotation'}
@@ -78,6 +94,8 @@ export function GlobeHud({
           {formatCompact(hazardCount)} active hazards
         </Badge>
       </div>
+
+      {layersOpen ? <LayerPanel enabledIds={layerIds} onToggle={onToggleLayer} /> : null}
 
       {selectedCountry ? (
         <CountryInfoPanel country={selectedCountry} onClose={onCloseInfo} />

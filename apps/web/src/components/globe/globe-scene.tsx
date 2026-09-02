@@ -7,16 +7,28 @@ import * as React from 'react';
 
 import { CountryBorders } from './country-borders';
 import type { CountryOutline } from './country-geometry';
+import { DataPointsLayer, LIVE_SOURCES } from './data-points-layer';
+import { DayNightTerminator } from './day-night';
 import { GlobeCamera, type FlyToTarget } from './globe-camera';
 import { GlobeInteraction } from './globe-interaction';
 import { GlobeSphere } from './globe-sphere';
+import { Graticule } from './graticule';
 import { HazardMarkers } from './hazard-markers';
+
+export interface ActiveLiveLayer {
+  id: string;
+  accent: string;
+}
 
 export interface GlobeSceneProps {
   basemapUrl: string;
   hazards: HazardEvent[];
   flyTo: FlyToTarget | null;
   autoRotate: boolean;
+  showBorders?: boolean;
+  showGraticule?: boolean;
+  showDayNight?: boolean;
+  liveLayers?: ActiveLiveLayer[];
   onHoverCountry?: (country: CountryOutline | null) => void;
   onSelectCountry?: (country: CountryOutline, point: LngLat) => void;
   onSelectHazard?: (event: HazardEvent) => void;
@@ -34,6 +46,10 @@ export function GlobeScene({
   hazards,
   flyTo,
   autoRotate,
+  showBorders = true,
+  showGraticule = false,
+  showDayNight = false,
+  liveLayers = [],
   onHoverCountry,
   onSelectCountry,
   onSelectHazard,
@@ -51,7 +67,14 @@ export function GlobeScene({
       <Stars radius={800} depth={80} count={4000} factor={3} saturation={0} fade speed={0.4} />
 
       <GlobeSphere textureUrl={basemapUrl} />
-      <CountryBorders />
+      {showBorders ? <CountryBorders /> : null}
+      {showGraticule ? <Graticule /> : null}
+      {showDayNight ? <DayNightTerminator /> : null}
+      {liveLayers
+        .filter((layer) => LIVE_SOURCES[layer.id])
+        .map((layer) => (
+          <DataPointsLayer key={layer.id} layerId={layer.id} color={layer.accent} />
+        ))}
       <HazardMarkers events={hazards} onSelect={onSelectHazard} />
       <GlobeInteraction onHoverCountry={onHoverCountry} onSelectCountry={onSelectCountry} />
       <GlobeCamera flyTo={flyTo} autoRotate={autoRotate} onUserInteracted={onUserInteracted} />

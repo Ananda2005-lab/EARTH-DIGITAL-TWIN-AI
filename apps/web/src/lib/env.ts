@@ -4,20 +4,27 @@ import { z } from 'zod';
  * Server-side environment. Validated lazily so that a missing optional provider
  * key degrades a single feature instead of crashing the whole app at boot.
  */
+const optionalCredential = (minimumLength: number) =>
+  z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().min(minimumLength).optional(),
+  );
+
 const serverSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   API_BASE_URL: z.string().url().default('http://localhost:4000/api/v1'),
   AI_BASE_URL: z.string().url().default('http://localhost:8000'),
   UPSTREAM_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60_000).default(12_000),
 
-  // Optional provider credentials — features self-disable when absent.
-  NASA_FIRMS_API_KEY: z.string().min(8).optional(),
-  OPENSKY_CLIENT_ID: z.string().min(3).optional(),
-  OPENSKY_CLIENT_SECRET: z.string().min(3).optional(),
-  AISSTREAM_API_KEY: z.string().min(8).optional(),
-  TOMTOM_API_KEY: z.string().min(8).optional(),
-  MAPTILER_API_KEY: z.string().min(8).optional(),
-  CESIUM_ION_TOKEN: z.string().min(8).optional(),
+  // Empty values from `.env.local` mean "not configured", just like an absent
+  // variable. Non-empty credentials still retain their minimum-length checks.
+  NASA_FIRMS_API_KEY: optionalCredential(8),
+  OPENSKY_CLIENT_ID: optionalCredential(3),
+  OPENSKY_CLIENT_SECRET: optionalCredential(3),
+  AISSTREAM_API_KEY: optionalCredential(8),
+  TOMTOM_API_KEY: optionalCredential(8),
+  MAPTILER_API_KEY: optionalCredential(8),
+  CESIUM_ION_TOKEN: optionalCredential(8),
 });
 
 const clientSchema = z.object({
